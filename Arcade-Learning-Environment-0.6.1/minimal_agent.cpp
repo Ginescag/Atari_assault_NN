@@ -1,10 +1,14 @@
 #include <iostream>
 #include <cmath>
 #include <cstdint>
+#include <map>
+#include <fstream>
+#include <string>
+#include <filesystem>
 #include "src/ale_interface.hpp"
-
+using namespace std;
 // Constants
-constexpr uint32_t maxSteps = 7500;
+constexpr uint32_t maxSteps = 500;
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Get info from RAM
@@ -51,13 +55,34 @@ void usage(char const* pname) {
    exit(-1);
 }
 
+
+//PARA USAR ESTA FUNCION TIENES QUE INICIALIZAR PREVRAM
+void getRAMFreq(map<int, int>& RAMmap, ALEInterface& alei, auto& prevRAM){
+   auto aux = alei.getRAM();
+   for(int i = 0; i < 128; i++){
+      if(aux.get(i) != prevRAM.get(i)){
+         RAMmap[i] = RAMmap[i] + 1;
+      }
+   }
+   prevRAM = aux;
+}
+
+//para pasar del diccionario a un fichero para hacer el heatmap
+void mapToFile(string& filename, map<int, int>& RAMmap){
+   ofstream RAMfile(filename);
+   for(int i = 0; i < 128; i++){
+      RAMfile << RAMmap[i] << "\n";
+   }
+   RAMfile.close();
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 /// MAIN PROGRAM
 ///////////////////////////////////////////////////////////////////////////////
 int main(int argc, char **argv) {
    reward_t totalReward{};
    ALEInterface alei{};
-
+   std::cout << "Working dir: " << std::filesystem::current_path() << std::endl;
    // Check input parameter
    if (argc != 2)
       usage(argv[0]);
@@ -69,6 +94,10 @@ int main(int argc, char **argv) {
    alei.setBool ("sound", true);
    alei.loadROM (argv[1]);
 
+   auto prevRAM = alei.getRAM();
+   map <int, int> RAMmap;
+   string fileName = "RamFILE.txt";
+
    // Init
    std::srand(static_cast<uint32_t>(std::time(0)));
 
@@ -78,12 +107,16 @@ int main(int argc, char **argv) {
       uint32_t step{};
       while ( !alei.game_over() && step < maxSteps ) { 
          totalReward += agentStep(alei);
+         getRAMFreq(RAMmap, alei, prevRAM);
          ++step;
       }
 
       std::cout << "Steps: " << step << std::endl;
       std::cout << "Reward: " << totalReward << std::endl;
+
+      mapToFile(fileName, RAMmap);
    }
+
 
    return 0;
 }
