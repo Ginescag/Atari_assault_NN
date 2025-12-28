@@ -47,11 +47,16 @@ reward_t agentStep(ALEInterface& alei) {
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Print usage and exit
+/// Definimos las posibilidades de uso
+/// En modo heatmap guarda en el fichero destino las variaciones en la RAM
+/// En modo dataset se juega en modo manual y se guardan los datos en el fichero destino
+/// En modo train se realiza el entrenamiento a partir de los datos del fichero de origen y guarda los pesos de la red en el fichero destino  
 ///////////////////////////////////////////////////////////////////////////////
+
 void usage(char const* pname) {
    std::cerr
       << "\nUSAGE:\n" 
-      << "   " << pname << " <romfile>\n";
+      << "   " << pname << " <romfile>" << " (heatmap | dataset | train <ORGfile>) <DSTfile>\n";
    exit(-1);
 }
 
@@ -82,9 +87,13 @@ void mapToFile(string& filename, map<int, int>& RAMmap){
 int main(int argc, char **argv) {
    reward_t totalReward{};
    ALEInterface alei{};
-   std::cout << "Working dir: " << std::filesystem::current_path() << std::endl;
-   // Check input parameter
-   if (argc != 2)
+
+   bool trainMode = (argc == 5 && string(argv[2]) == "train");
+   bool datasetMode = (argc == 4 && string(argv[2]) == "dataset");
+   bool heatmapMode = (argc == 4 && string(argv[2]) == "heatmap");
+   
+   // Check parameters and modes
+   if (!trainMode && !datasetMode && !heatmapMode)
       usage(argv[0]);
 
    // Configure alei object.
@@ -93,16 +102,18 @@ int main(int argc, char **argv) {
    alei.setBool ("display_screen", true);
    alei.setBool ("sound", true);
    alei.loadROM (argv[1]);
-
+  
+  
+   if(heatmapMode){
+   string RAMfile = string(argv[3])
    auto prevRAM = alei.getRAM();
    map <int, int> RAMmap;
-   string fileName = "RamFILE.txt";
+   string fileName = RAMfile;
 
    // Init
    std::srand(static_cast<uint32_t>(std::time(0)));
 
    // Main loop
-   {
       alei.act(PLAYER_A_FIRE);
       uint32_t step{};
       while ( !alei.game_over() && step < maxSteps ) { 
