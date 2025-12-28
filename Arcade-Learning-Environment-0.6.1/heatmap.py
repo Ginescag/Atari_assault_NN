@@ -11,12 +11,7 @@ def fileToHeatmap(filename: str, rows: int = 8, cols: int = 16):
             if line == "":
                 continue
             RAMl.append(int(line))
-
-    if len(RAMl) != rows * cols:
-        raise ValueError(
-            f"El fichero tiene {len(RAMl)} valores, pero rows*cols={rows*cols}."
-        )
-
+            
     arr = np.array(RAMl)
     matrix = arr.reshape(rows, cols)
 
