@@ -6,45 +6,63 @@
 #include <string>
 #include <filesystem>
 #include "src/ale_interface.hpp"
+#include <SDL/SDL.h>
 using namespace std;
 // Constants
 constexpr uint32_t maxSteps = 500;
 
-///////////////////////////////////////////////////////////////////////////////
-/// Get info from RAM
-///////////////////////////////////////////////////////////////////////////////
-int32_t getPlayerX(ALEInterface& alei) {
-   return alei.getRAM().get(72) + ((rand() % 3) - 1);
-}
 
-int32_t getBallX(ALEInterface& alei) {
-   return alei.getRAM().get(99) + ((rand() % 3) - 1);
-}
+string getPlayerAction(ALEInterface& alei){
+   string action = "PLAYER_A_NOOP";
+   Uint8* keystates = SDL_GetKeyState(NULL);
 
-///////////////////////////////////////////////////////////////////////////////
-/// Do Next Agent Step
-///////////////////////////////////////////////////////////////////////////////
-reward_t agentStep(ALEInterface& alei) {
-   static constexpr int32_t wide { 9 };
-   static int32_t lives { alei.lives() };
-   reward_t reward{0};
 
-   // When we loose a live, we need to press FIRE to start again
-   if (alei.lives() < lives) {
-      lives = alei.lives();
-      alei.act(PLAYER_A_FIRE);
+   if (keystates[SDLK_SPACE] && keystates[SDLK_RIGHT]){
+      action = "PLAYER_A_RIGHTFIRE";
+   }
+   else if (keystates[SDLK_SPACE] && keystates[SDLK_LEFT]){
+      action = "PLAYER_A_LEFTFIRE";
+   }
+   else if (keystates[SDLK_UP]){
+      action = "PLAYER_A_UPFIRE";
+   }
+   else if (keystates[SDLK_LEFT]){
+      action = "PLAYER_A_LEFT";
+   } 
+   else if (keystates[SDLK_RIGHT]){
+      action = "PLAYER_A_RIGHT";
    }
 
-   // Apply rules.
-   auto playerX { getPlayerX(alei) };
-   auto ballX   { getBallX(alei)   };
-   
-   if       (ballX < playerX + wide) { reward = alei.act(PLAYER_A_LEFT);   }
-   else if  (ballX > playerX + wide) { reward = alei.act(PLAYER_A_RIGHT);  }
-   
-   return reward + alei.act(PLAYER_A_NOOP);
+   return action;
 }
 
+reward_t manualStep(ALEInterface& alei){
+   Action action = PLAYER_A_NOOP;
+   Uint8* keystates = SDL_GetKeyState(NULL);
+
+
+   if (keystates[SDLK_SPACE] && keystates[SDLK_RIGHT]){
+      action = PLAYER_A_RIGHTFIRE;
+   }
+   else if (keystates[SDLK_SPACE] && keystates[SDLK_LEFT]){
+      action = PLAYER_A_LEFTFIRE;
+   }
+   else if (keystates[SDLK_UP]){
+      action = PLAYER_A_UPFIRE;
+   }
+   else if (keystates[SDLK_LEFT]){
+      action = PLAYER_A_LEFT;
+   } 
+   else if (keystates[SDLK_RIGHT]){
+      action = PLAYER_A_RIGHT;
+   }
+   else if (keystates[SDLK_ESCAPE]){
+      cout << "Exiting game" << endl;
+      exit(0);
+   }
+
+   return alei.act(action);
+}
 ///////////////////////////////////////////////////////////////////////////////
 /// Print usage and exit
 /// Definimos las posibilidades de uso
@@ -60,6 +78,26 @@ void usage(char const* pname) {
    exit(-1);
 }
 
+//this retrieves every RAM byte at a given step and the action the player made in that state and saves that info inside the file 
+void collectData(ALEInterface& alei, string filename){
+   auto RAMArr = alei.getRAM();
+   string action = getPlayerAction(alei);
+   ofstream DataFile(filename, ios::app);
+   
+   if(DataFile.is_open()){
+
+   for(int i = 0; i < 128; i++){
+      DataFile << static_cast<int>(RAMArr.get(i)) << " ";
+   }
+
+   DataFile << action << "\n";
+   DataFile.close();
+
+   }else{
+      cerr << "ERROR: could not open Data File";
+   }
+
+}
 
 //PARA USAR ESTA FUNCION TIENES QUE INICIALIZAR PREVRAM
 void getRAMFreq(map<int, int>& RAMmap, ALEInterface& alei, auto& prevRAM){
@@ -105,29 +143,84 @@ int main(int argc, char **argv) {
   
   
    if(heatmapMode){
-   string RAMfile = string(argv[3])
-   auto prevRAM = alei.getRAM();
-   map <int, int> RAMmap;
-   string fileName = RAMfile;
+      string RAMfile = string(argv[3]);
+      auto prevRAM = alei.getRAM();
+      map <int, int> RAMmap;
 
-   // Init
-   std::srand(static_cast<uint32_t>(std::time(0)));
-
-   // Main loop
-      alei.act(PLAYER_A_FIRE);
+      // Init
+      std::srand(static_cast<uint32_t>(std::time(0)));
       uint32_t step{};
+      bool manual = {true};
+      SDL_Event ev;
+      int32_t lives {alei.lives() };
+
       while ( !alei.game_over() && step < maxSteps ) { 
-         totalReward += agentStep(alei);
+         while(SDL_PollEvent(&ev)){
+            if(ev.type == SDL_KEYDOWN && ev.key.keysym.sym == SDLK_m){
+               manual = !manual;
+            }
+         }
+
+         if(alei.lives() < lives){
+            lives = alei.lives();
+            alei.act(PLAYER_A_FIRE);
+         }
+
+         if(manual){
+            totalReward += manualStep(alei);
+         }else{
+            totalReward += 1;
+         }
+
          getRAMFreq(RAMmap, alei, prevRAM);
          ++step;
       }
 
-      std::cout << "Steps: " << step << std::endl;
-      std::cout << "Reward: " << totalReward << std::endl;
-
-      mapToFile(fileName, RAMmap);
+      std::cout << "RAM FREQ COLLECTED. RUN HEATMAP SCRIPT" << step << std::endl;
+      mapToFile(RAMfile, RAMmap);
    }
 
+   if(datasetMode){
+      string DataFile = string(argv[3]);
+
+      // Init
+      std::srand(static_cast<uint32_t>(std::time(0)));
+
+
+      uint32_t step{};
+      bool manual = {true};
+      SDL_Event ev;
+      int32_t lives {alei.lives() };
+
+      while ( !alei.game_over() && step < maxSteps ) { 
+         while(SDL_PollEvent(&ev)){
+            if(ev.type == SDL_KEYDOWN && ev.key.keysym.sym == SDLK_m){
+               manual = !manual;
+            }
+         }
+
+         if(alei.lives() < lives){
+            lives = alei.lives();
+            alei.act(PLAYER_A_FIRE);
+         }
+
+         if(manual){
+            totalReward += manualStep(alei);
+         }else{
+            totalReward += 1;
+         }
+
+         collectData(alei, DataFile);
+         ++step;
+      }
+
+      std::cout << "DATA COLLECTED" << std::endl;
+
+   }
+
+   if(trainMode){
+      //retrieves info from the data set, normalizes it (y label), trains the model on top of a MLP library (TO-DO)
+   }
 
    return 0;
 }
