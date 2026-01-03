@@ -85,6 +85,21 @@ class Matrix {
             return result;
         }
 
+        Matrix operator-(const Matrix& other) const {
+            
+            if (rows != other.rows || cols != other.cols) {
+                throw invalid_argument("Matrix dimensions do not match for subtraction.");
+            }
+
+            Matrix result(rows, cols);
+            for (unsigned int i = 0; i < rows; ++i) {
+                for (unsigned int j = 0; j < cols; ++j) {
+                    result.at(i, j) = at(i, j) - other.at(i, j);
+                }
+            }
+            return result;
+        }
+
     //auxiliary functions
         Matrix Hadamard(const Matrix& other) const {
             
@@ -165,7 +180,8 @@ class NeuralNetwork {
         vector<unsigned int> layers;
         vector<Matrix> weights;
         vector<Matrix> biases;
-
+        vector<Matrix> activations;
+    
         static double sigmoid(double x) {
             return 1.0 / (1.0 + exp(-x));
         }
@@ -175,11 +191,16 @@ class NeuralNetwork {
         }
         
         static double tanh(double x) {
-            return tanh(x);
+            return (exp(x) - exp(-x)) / (exp(x) + exp(-x));
         }
 
+        // y = tanh(x)
         static double dtanh(double y) {
             return 1.0 - y * y;
+        }
+        
+        static double sign(double x) {
+            return (x >= 0) ? 1.0 : -1.0;
         }
     
     public:
@@ -196,7 +217,10 @@ class NeuralNetwork {
         }
 
         Matrix feedforward(const Matrix& input, string activation_func = "sigmoid") {
+            activations.clear();
+            activations.push_back(input);
             Matrix activation = input;
+
             for(int i = 0; i < weights.size(); ++i) {
                 activation = (weights[i] * activation) + biases[i];
                 if (activation_func == "sigmoid") {
@@ -207,9 +231,12 @@ class NeuralNetwork {
                     cerr << "Unknown activation function: " << activation_func << endl;
                     exit(-1);
                 }
+
+                activations.push_back(activation);
             }
             return activation;
         }
+
 
         
 };
