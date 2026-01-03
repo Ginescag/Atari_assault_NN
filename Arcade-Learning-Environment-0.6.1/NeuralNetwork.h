@@ -1,7 +1,11 @@
+#ifndef NEURALNETWORK_H_
+#define NEURALNETWORK_H_
+
 #include <iostream>
 #include <vector>
 #include <cmath>
 #include <random>
+#include <string>
 using namespace std;
 
 class Matrix {
@@ -11,10 +15,18 @@ class Matrix {
         unsigned int cols;
 
     public:
+
+    //constructors
+        Matrix() : rows(0), cols(0) {}
+
         Matrix(unsigned int r, unsigned int c) : rows(r), cols(c) {
             data.resize(r, vector<double>(c, 0.0));
         }
 
+        Matrix (const Matrix& other) : rows(other.rows), cols(other.cols), data(other.data) {}
+
+
+    //getters
         unsigned int getRows() const {
             return rows;
         }
@@ -29,6 +41,16 @@ class Matrix {
 
         const double& at(unsigned int r, unsigned int c) const {
             return data[r][c];
+        }
+
+    //operators
+        Matrix& operator=(const Matrix& other) {
+            if (this != &other) {
+                rows = other.rows;
+                cols = other.cols;
+                data = other.data;
+            }
+            return *this;
         }
 
         Matrix operator*(const Matrix& other) const {
@@ -63,6 +85,7 @@ class Matrix {
             return result;
         }
 
+    //auxiliary functions
         Matrix Hadamard(const Matrix& other) const {
             
             if (rows != other.rows || cols != other.cols) {
@@ -136,37 +159,59 @@ class Matrix {
         }
 };
 
-int main() {
-    // Example usage - Matrix multiplication
-    Matrix A(2, 3);
-    Matrix B(3, 2);
 
-    cout << "Matrix A:\n" << A << endl;
-    cout << "Matrix B:\n" << B << endl;
+class NeuralNetwork {
+    private:
+        vector<unsigned int> layers;
+        vector<Matrix> weights;
+        vector<Matrix> biases;
 
-    A.RandIntMat(-5, 5);
-    B.RandIntMat(-5, 5);
+        static double sigmoid(double x) {
+            return 1.0 / (1.0 + exp(-x));
+        }
 
-    cout << "Matrix A after randomization:\n" << A << endl;
-    cout << "Matrix B after randomization:\n" << B << endl;
+        static double dsigmoid(double y) {
+            return y * (1.0 - y);
+        }
+        
+        static double tanh(double x) {
+            return tanh(x);
+        }
 
-    Matrix C = A * B;  // 2x3 * 3x2 = 2x2
-    cout << "Matrix C (A * B):\n" << C << endl;
+        static double dtanh(double y) {
+            return 1.0 - y * y;
+        }
+    
+    public:
+        NeuralNetwork(const vector<unsigned int>& layer_sizes) : layers(layer_sizes) {
+            for(int i = 0; i < layers.size() - 1; ++i) {
+                Matrix weight_matrix(layers[i + 1], layers[i]);
+                weight_matrix.RandMat();
+                weights.push_back(weight_matrix);
 
-    // For addition and dot product, matrices must have same dimensions
-    Matrix D(2, 3);
-    Matrix E(2, 3);
-    D.RandIntMat(-5, 5);
-    E.RandIntMat(-5, 5);
+                Matrix bias_matrix(layers[i + 1], 1);
+                bias_matrix.RandMat();
+                biases.push_back(bias_matrix);
+            }
+        }
 
-    cout << "\nMatrix D (2x3):\n" << D << endl;
-    cout << "Matrix E (2x3):\n" << E << endl;
+        Matrix feedforward(const Matrix& input, string activation_func = "sigmoid") {
+            Matrix activation = input;
+            for(int i = 0; i < weights.size(); ++i) {
+                activation = (weights[i] * activation) + biases[i];
+                if (activation_func == "sigmoid") {
+                    activation = activation.map(sigmoid);
+                } else if (activation_func == "tanh") {
+                    activation = activation.map(tanh);
+                } else {
+                    cerr << "Unknown activation function: " << activation_func << endl;
+                    exit(-1);
+                }
+            }
+            return activation;
+        }
 
-    Matrix F = D + E;  // Element-wise addition
-    cout << "Matrix F (D + E):\n" << F << endl;
+        
+};
 
-    Matrix G = D.Hadamard(E);  // Element-wise multiplication
-    cout << "Matrix G (D Hadamard E):\n" << G << endl;
-
-    return 0;
-}
+#endif
