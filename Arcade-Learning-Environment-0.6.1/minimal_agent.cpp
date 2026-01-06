@@ -13,24 +13,24 @@ constexpr uint32_t maxSteps = 500;
 
 
 string getPlayerAction(ALEInterface& alei){
-   string action = "PLAYER_A_NOOP";
+   string action = "0"; //"PLAYER_A_NOOP";
    Uint8* keystates = SDL_GetKeyState(NULL);
 
 
    if (keystates[SDLK_SPACE] && keystates[SDLK_RIGHT]){
-      action = "PLAYER_A_RIGHTFIRE";
+      action = "1"; //"PLAYER_A_RIGHTFIRE";
    }
    else if (keystates[SDLK_SPACE] && keystates[SDLK_LEFT]){
-      action = "PLAYER_A_LEFTFIRE";
+      action = "2"; //"PLAYER_A_LEFTFIRE";
    }
    else if (keystates[SDLK_UP]){
-      action = "PLAYER_A_UPFIRE";
+      action = "3"; //"PLAYER_A_UPFIRE";
    }
    else if (keystates[SDLK_LEFT]){
-      action = "PLAYER_A_LEFT";
+      action = "4"; //"PLAYER_A_LEFT";
    } 
    else if (keystates[SDLK_RIGHT]){
-      action = "PLAYER_A_RIGHT";
+      action = "5"; //"PLAYER_A_RIGHT";
    }
 
    return action;

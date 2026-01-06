@@ -6,6 +6,8 @@
 #include <cmath>
 #include <random>
 #include <string>
+#include <fstream>
+#include <sstream>
 using namespace std;
 
 class Matrix {
@@ -174,7 +176,59 @@ class Matrix {
         }
 };
 
+class DataHelper{
+    private:
+        string filename;
+        vector<Matrix> inputs;
+        vector<Matrix> targets;
 
+    public:
+        DataHelper(const string& file) : filename(file) {
+            ifstream infile(filename);
+            if (infile.is_open()) {
+                
+                string line;
+                Matrix input_matrix(128, 1); //assuming 128 RAM bytes as input
+                Matrix target_matrix(6, 1); //assuming 6 possible actions as output
+
+                while (getline(infile, line)) {
+                    stringstream ss(line);
+                    int val;
+                    for (int i = 0; i < 128; ++i) {
+                        ss >> val;
+                        input_matrix.at(i, 0) = static_cast<double>(val) / 255.0; //normalize RAM byte value
+                    }
+                    ss >> val; //read action
+                    target_matrix.at(val, 0) = 1.0;
+
+                    inputs.push_back(input_matrix);
+                    targets.push_back(target_matrix);
+
+                    // Reset matrices for next line
+                    input_matrix = Matrix(128, 1);
+                    target_matrix = Matrix(6, 1);
+                }
+
+                infile.close();
+            }
+            else {
+                cerr << "ERROR: Could not open data file." << endl;
+                exit(-1);
+            }
+        }
+
+        const vector<Matrix>& getInputs() const {
+            return inputs;
+        }
+
+        const vector<Matrix>& getTargets() const {
+            return targets;
+        }
+
+        int getOutputLayerSize() const {
+            return (targets.empty()) ? 0 : targets[0].getRows(); //number of rows in target matrix
+        }
+};
 class NeuralNetwork {
     private:
         vector<unsigned int> layers;
@@ -199,10 +253,20 @@ class NeuralNetwork {
             return 1.0 - y * y;
         }
         
+
+        //WE WONT REALLY USE THIS ACTIVATION FUNCTION BUT JUST IN CASE
+        //------------------------------------------------------------------------------------
+        //------------------------------------------------------------------------------------
         static double sign(double x) {
             return (x >= 0) ? 1.0 : -1.0;
         }
 
+        static double dsign(double y) {
+            return 0.0; // Derivative is zero almost everywhere
+        }
+        //------------------------------------------------------------------------------------ 
+        //------------------------------------------------------------------------------------
+    
         //we only implement softmax for the output layer (1 column matrix)
         static Matrix softmax(const Matrix& z){
            //softmax formula -> exp(z_i) / sum(exp(z_j)) for j = 1 to n
@@ -251,7 +315,7 @@ class NeuralNetwork {
             }
         }
 
-        Matrix feedforward(const Matrix& input, string activation_func = "sigmoid") {
+        Matrix feedforward(const Matrix& input, string activation_func = "tanh") {
             activations.clear();
             activations.push_back(input);
             Matrix activation = input;
@@ -260,17 +324,9 @@ class NeuralNetwork {
                 activation = (weights[i] * activation) + biases[i];
                 if (activation_func == "sigmoid") {
                     activation = activation.map(sigmoid);
-                } else if (activation_func == "tanh") {
-                    activation = activation.map(tanh);
-                }else if (activation_func == "sign") {
-                    activation = activation.map(sign);
-                } else if (activation_func == "softmax" && i == weights.size() -1) { //i == weights.size() -1 for added security, we just want to apply softmax in the output layer
-                    activation = softmax(activation);
                 }else {
-                    cerr << "Unknown activation function: " << activation_func << endl;
-                    exit(-1);
+                    activation = activation.map(tanh); //default to tanh
                 }
-
                 activations.push_back(activation);
             }
             return activation;
@@ -294,19 +350,19 @@ class NeuralNetwork {
 
         //backpropagation function needs to be implemented
 
-        void backpropagate(const Matrix& target, double learning_rate, string activation_func) {
+        void backpropagate(const Matrix& target, double learning_rate, string activation_func = "tanh") {
             
             // 1. calculate the output error (delta)
             Matrix output = activations.back();
             Matrix error = (output - target).ScalarMul(2.0); //MSE derivative: 2 * (Output - Target) 
             Matrix gradient = error;
-            
+
 
             if (activation_func == "sigmoid") {
                 Matrix derivative = output.map(dsigmoid);
                 gradient = gradient.Hadamard(derivative);
             } 
-            else if (activation_func == "tanh") {
+            else {
                 Matrix derivative = output.map(dtanh);
                 gradient = gradient.Hadamard(derivative);
             }
@@ -334,12 +390,9 @@ class NeuralNetwork {
                     Matrix prev_derivative;
                     if (activation_func == "sigmoid") {
                         prev_derivative = activations[i].map(dsigmoid);
-                    } else if (activation_func == "tanh") {
+                    } 
+                    else {
                         prev_derivative = activations[i].map(dtanh);
-                    } else {
-                        
-                        // Si es otra, asumimos derivada 1 (identidad) o manejo de errores
-                        prev_derivative = activations[i].map([](double x){ return 1.0; }); 
                     }
 
                     // new gradient = prev_error Hadamard prev_derivative
@@ -352,11 +405,56 @@ class NeuralNetwork {
             }
         }
         
+        void train(const vector<Matrix>& inputs, const vector<Matrix>& targets, int epochs, double learning_rate, string activation_func = "tanh") {
+            // Validación básica
+            if (inputs.size() != targets.size()) {
+                cerr << "Error: El numero de inputs y targets no coincide." << endl;
+                return;
+            }
 
-        //THIS NEEDS A LOT OF WORK 
-        void train(const Matrix& input, const Matrix& target, double learning_rate, string activation_func = "sigmoid") {
-            feedforward(input, activation_func);
-            backpropagate(target, learning_rate, activation_func);
+            for (int epoch = 1; epoch <= epochs; ++epoch) {
+                double total_loss = 0.0;
+
+                for (size_t i = 0; i < inputs.size(); ++i) {
+
+                    Matrix output = feedforward(inputs[i], activation_func);
+                    
+                    total_loss += costFunction(output, targets[i]);
+
+                    backpropagate(targets[i], learning_rate, activation_func);
+                }
+
+                if (epoch % 10 == 0 || epoch == 1 || epoch == epochs) {
+                     cout << "Epoch: " << epoch  << "/" << epochs 
+                          << " | Error Promedio (Loss): " << total_loss / inputs.size() << endl;
+                }
+            }
+            cout << "Entrenamiento finalizado." << endl;
+        }
+
+        //PREDICT NEEDS TO BE IMPLEMENTED
+
+        vector<int> predict(const vector<Matrix>& inputs, string activation_func = "tanh") {
+            vector<int> predictions;
+            
+            for (const auto& input : inputs) {
+                // 1. Obtener salida de la red
+                Matrix output = feedforward(input, activation_func);
+                
+                // 2. ArgMax: Buscar el índice con el valor más alto
+                int maxIndex = 0;
+                double maxValue = output.at(0, 0);
+                
+                for (int i = 1; i < output.getRows(); ++i) {
+                    if (output.at(i, 0) > maxValue) {
+                        maxValue = output.at(i, 0);
+                        maxIndex = i;
+                    }
+                }
+                
+                predictions.push_back(maxIndex);
+            }
+            return predictions;
         }
 };
 
