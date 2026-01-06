@@ -9,7 +9,7 @@
 #include <SDL/SDL.h>
 using namespace std;
 // Constants
-constexpr uint32_t maxSteps = 500;
+constexpr uint32_t maxSteps = 8000000;
 
 
 string getPlayerAction(ALEInterface& alei){
