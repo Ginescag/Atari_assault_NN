@@ -175,7 +175,6 @@ class Matrix {
             return os;
         }
 };
-
 class DataHelper{
     private:
         string filename;
@@ -303,6 +302,14 @@ class NeuralNetwork {
             return activations;
         }
 
+        NeuralNetwork() {
+            //default constructor
+            layers = {};
+            weights = {};
+            biases = {};
+            activations = {};
+        }
+
         NeuralNetwork(const vector<unsigned int>& layer_sizes) : layers(layer_sizes) {
             for(int i = 0; i < layers.size() - 1; ++i) {
                 Matrix weight_matrix(layers[i + 1], layers[i]);
@@ -314,6 +321,14 @@ class NeuralNetwork {
                 biases.push_back(bias_matrix);
             }
         }
+
+        NeuralNetwork(const string& filename) {
+            if (!loadModel(filename)) {
+                cerr << "Error: Could not load model from " << filename << ". Empty model initialized." << endl;
+                NeuralNetwork();
+            }
+        }
+
 
         Matrix feedforward(const Matrix& input, string activation_func = "tanh") {
             activations.clear();
@@ -406,9 +421,9 @@ class NeuralNetwork {
         }
         
         void train(const vector<Matrix>& inputs, const vector<Matrix>& targets, int epochs, double learning_rate, string activation_func = "tanh") {
-            // Validación básica
+            // Basic validation
             if (inputs.size() != targets.size()) {
-                cerr << "Error: El numero de inputs y targets no coincide." << endl;
+                cerr << "Error: Number of inputs and targets do not match." << endl;
                 return;
             }
 
@@ -426,13 +441,11 @@ class NeuralNetwork {
 
                 if (epoch % 10 == 0 || epoch == 1 || epoch == epochs) {
                      cout << "Epoch: " << epoch  << "/" << epochs 
-                          << " | Error Promedio (Loss): " << total_loss / inputs.size() << endl;
+                          << " | Avg Error (Loss): " << total_loss / inputs.size() << endl;
                 }
             }
-            cout << "Entrenamiento finalizado." << endl;
+            cout << "Training completed." << endl;
         }
-
-        //PREDICT NEEDS TO BE IMPLEMENTED
 
         vector<int> predict(const vector<Matrix>& inputs, string activation_func = "tanh") {
             vector<int> predictions;
@@ -456,6 +469,101 @@ class NeuralNetwork {
             }
             return predictions;
         }
+
+        
+        bool saveModel(const string& filename) const {
+            ofstream file(filename);
+            if (!file.is_open()) return false;
+
+            //save topology
+            file << layers.size() << endl;
+            for (unsigned int size : layers) {
+                file << size << " ";
+            }
+            file << endl;
+
+            // 2. Guardar Pesos
+            // Recorremos cada matriz de pesos
+            for (const auto& w : weights) {
+                file << w.getRows() << " " << w.getCols() << endl; // Cabecera de matriz
+                for (unsigned int i = 0; i < w.getRows(); ++i) {
+                    for (unsigned int j = 0; j < w.getCols(); ++j) {
+                        file << w.at(i, j) << " ";
+                    }
+                    file << endl;
+                }
+            }
+
+            // 3. Guardar Sesgos (Biases)
+            for (const auto& b : biases) {
+                file << b.getRows() << " " << b.getCols() << endl;
+                for (unsigned int i = 0; i < b.getRows(); ++i) {
+                    for (unsigned int j = 0; j < b.getCols(); ++j) {
+                        file << b.at(i, j) << " ";
+                    }
+                    file << endl;
+                }
+            }
+
+            file.close();
+            cout << "Model saved successfully to: " << filename << endl;
+            return true;
+        }
+
+        bool loadModel(const string& filename) {
+            ifstream file(filename);
+            if (!file.is_open()) return false;
+
+            // 1. Cargar Topología
+            unsigned int numLayers;
+            file >> numLayers;
+            
+            layers.clear();
+            for (unsigned int i = 0; i < numLayers; ++i) {
+                unsigned int size;
+                file >> size;
+                layers.push_back(size);
+            }
+
+            // 2. Reconstruir estructura (vaciar y redimensionar vectores)
+            weights.clear();
+            biases.clear();
+            activations.clear(); // Limpiar activaciones antiguas
+
+            // 3. Cargar Pesos
+            // Sabemos que hay (numLayers - 1) matrices de pesos
+            for (unsigned int i = 0; i < numLayers - 1; ++i) {
+                unsigned int rows, cols;
+                file >> rows >> cols;
+                
+                Matrix w(rows, cols);
+                for (unsigned int r = 0; r < rows; ++r) {
+                    for (unsigned int c = 0; c < cols; ++c) {
+                        file >> w.at(r, c);
+                    }
+                }
+                weights.push_back(w);
+            }
+
+            // 4. Cargar Sesgos
+            for (unsigned int i = 0; i < numLayers - 1; ++i) {
+                unsigned int rows, cols;
+                file >> rows >> cols;
+                
+                Matrix b(rows, cols);
+                for (unsigned int r = 0; r < rows; ++r) {
+                    for (unsigned int c = 0; c < cols; ++c) {
+                        file >> b.at(r, c);
+                    }
+                }
+                biases.push_back(b);
+            }
+
+            file.close();
+            cout << "Model loaded successfully from: " << filename << endl;
+            return true;
+        }
+
 };
 
 #endif

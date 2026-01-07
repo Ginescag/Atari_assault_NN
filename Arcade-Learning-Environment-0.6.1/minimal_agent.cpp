@@ -7,6 +7,7 @@
 #include <filesystem>
 #include "src/ale_interface.hpp"
 #include <SDL/SDL.h>
+#include "NeuralNetwork.h"
 using namespace std;
 // Constants
 constexpr uint32_t maxSteps = 500;
@@ -220,6 +221,18 @@ int main(int argc, char **argv) {
 
    if(trainMode){
       //retrieves info from the data set, normalizes it (y label), trains the model on top of a MLP library (TO-DO)
+
+      string ORGfile = string (argv[3]);
+      string DSTfile = string (argv[4]);
+
+      DataHelper dataHelper(ORGfile);
+
+      NeuralNetwork nn({128, 64, 32, dataHelper.getOutputLayerSize()});
+
+      nn.train(dataHelper.getInputs(), dataHelper.getTargets(),200, 0.01, "tanh");
+      
+
+
    }
 
    return 0;
