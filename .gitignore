@@ -43,3 +43,25 @@
 .venv/
 venv/
 
+# Build artifacts
+build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+install_manifest.txt
+Makefile
+*.cmake
+*.o
+*.a
+*.so
+*.dll
+*.dylib
+*.exe
+
+# IDE
+.vscode/
+
+ale
+minimal_agent
+ale-*
+doc/examples/ale-*
