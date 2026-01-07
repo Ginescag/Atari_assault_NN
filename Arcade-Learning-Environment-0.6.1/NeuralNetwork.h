@@ -302,6 +302,49 @@ class NeuralNetwork {
             return activations;
         }
 
+        // ================= GA helpers (do not affect BP unless used) =================
+        size_t paramCount() const {
+            size_t n = 0;
+            for (size_t i = 0; i < weights.size(); ++i) {
+                n += (size_t)weights[i].getRows() * (size_t)weights[i].getCols();
+                n += (size_t)biases[i].getRows()  * (size_t)biases[i].getCols();
+            }
+            return n;
+        }
+
+        std::vector<double> getParams() const {
+            std::vector<double> p;
+            p.reserve(paramCount());
+            for (size_t i = 0; i < weights.size(); ++i) {
+                for (unsigned r = 0; r < weights[i].getRows(); ++r)
+                    for (unsigned c = 0; c < weights[i].getCols(); ++c)
+                        p.push_back(weights[i].at(r, c));
+
+                for (unsigned r = 0; r < biases[i].getRows(); ++r)
+                    for (unsigned c = 0; c < biases[i].getCols(); ++c)
+                        p.push_back(biases[i].at(r, c));
+            }
+            return p;
+        }
+
+        void setParams(const std::vector<double>& p) {
+            if (p.size() != paramCount()) {
+                throw std::invalid_argument("setParams: parameter vector size mismatch.");
+            }
+            size_t k = 0;
+            for (size_t i = 0; i < weights.size(); ++i) {
+                for (unsigned r = 0; r < weights[i].getRows(); ++r)
+                    for (unsigned c = 0; c < weights[i].getCols(); ++c)
+                        weights[i].at(r, c) = p[k++];
+
+                for (unsigned r = 0; r < biases[i].getRows(); ++r)
+                    for (unsigned c = 0; c < biases[i].getCols(); ++c)
+                        biases[i].at(r, c) = p[k++];
+            }
+        }
+        // ============================================================================
+
+
         NeuralNetwork() {
             //default constructor
             layers = {};
