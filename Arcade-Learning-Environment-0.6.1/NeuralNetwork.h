@@ -8,6 +8,7 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <ctime>
 using namespace std;
 
 class Matrix {
@@ -58,7 +59,8 @@ class Matrix {
         Matrix operator*(const Matrix& other) const {
             
             if (cols != other.rows) {
-                throw invalid_argument("Matrix dimensions do not match for multiplication.");
+                cerr << "Matrix dimensions do not match for multiplication." << endl;
+                exit(-1);
             }
 
             Matrix result(rows, other.cols);
@@ -75,7 +77,8 @@ class Matrix {
         Matrix operator+(const Matrix& other) const {
             
             if (rows != other.rows || cols != other.cols) {
-                throw invalid_argument("Matrix dimensions do not match for addition.");
+                cerr << "Matrix dimensions do not match for addition." << endl;
+                exit(-1);
             }
 
             Matrix result(rows, cols);
@@ -90,7 +93,8 @@ class Matrix {
         Matrix operator-(const Matrix& other) const {
             
             if (rows != other.rows || cols != other.cols) {
-                throw invalid_argument("Matrix dimensions do not match for subtraction.");
+                cerr << "Matrix dimensions do not match for subtraction." << endl;
+                exit(-1);
             }
 
             Matrix result(rows, cols);
@@ -106,7 +110,8 @@ class Matrix {
         Matrix Hadamard(const Matrix& other) const {
             
             if (rows != other.rows || cols != other.cols) {
-                throw invalid_argument("Matrix dimensions do not match for Hadamard product.");
+                cerr << "Matrix dimensions do not match for Hadamard product." << endl;
+                exit(-1);
             }
 
             Matrix result(rows, cols);
@@ -191,6 +196,7 @@ class DataHelper{
                 Matrix target_matrix(6, 1); //assuming 6 possible actions as output
 
                 while (getline(infile, line)) {
+                    if (line.empty()) continue;
                     stringstream ss(line);
                     int val;
                     for (int i = 0; i < 128; ++i) {
@@ -325,7 +331,10 @@ class NeuralNetwork {
         NeuralNetwork(const string& filename) {
             if (!loadModel(filename)) {
                 cerr << "Error: Could not load model from " << filename << ". Empty model initialized." << endl;
-                NeuralNetwork();
+                layers = {};
+                weights = {};
+                biases = {};
+                activations = {};
             }
         }
 
@@ -350,7 +359,8 @@ class NeuralNetwork {
         // MSE, this is use to know how well the NN is performing
         double costFunction(const Matrix& predicted, const Matrix& target) {
             if (predicted.getRows() != target.getRows() || predicted.getCols() != target.getCols()) {
-                throw invalid_argument("Matrix dimensions do not match for cost function.");
+                cerr << "Matrix dimensions do not match for cost function." << endl;
+                exit(-1);
             }
 
             double sum = 0.0;
@@ -468,6 +478,24 @@ class NeuralNetwork {
                 predictions.push_back(maxIndex);
             }
             return predictions;
+        }
+
+        int predictOne(const Matrix& input, string activation_func = "tanh") {
+            // 1. Obtener salida de la red
+            Matrix output = feedforward(input, activation_func);
+            
+            // 2. ArgMax: Buscar el índice con el valor más alto
+            int maxIndex = 0;
+            double maxValue = output.at(0, 0);
+            
+            for (int i = 1; i < output.getRows(); ++i) {
+                if (output.at(i, 0) > maxValue) {
+                    maxValue = output.at(i, 0);
+                    maxIndex = i;
+                }
+            }
+            
+            return maxIndex;
         }
 
         

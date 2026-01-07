@@ -70,12 +70,13 @@ reward_t manualStep(ALEInterface& alei){
 /// En modo heatmap guarda en el fichero destino las variaciones en la RAM
 /// En modo dataset se juega en modo manual y se guardan los datos en el fichero destino
 /// En modo train se realiza el entrenamiento a partir de los datos del fichero de origen y guarda los pesos de la red en el fichero destino  
+/// En modo model se carga el modelo guardado en el fichero de origen y juega en modo automático
 ///////////////////////////////////////////////////////////////////////////////
 
 void usage(char const* pname) {
    std::cerr
       << "\nUSAGE:\n" 
-      << "   " << pname << " <romfile>" << " (heatmap | dataset | train <ORGfile>) <DSTfile>\n";
+      << "   " << pname << " <romfile>" << " (heatmap <DSTfile> | dataset <DSTfile> | model <ORGfile> | train <ORGfile> <DSTfile>)\n";
    exit(-1);
 }
 
@@ -100,7 +101,7 @@ void collectData(ALEInterface& alei, string filename){
 
 }
 
-//PARA USAR ESTA FUNCION TIENES QUE INICIALIZAR PREVRAM
+//Parses RAM changes to frequency map
 void getRAMFreq(map<int, int>& RAMmap, ALEInterface& alei, auto& prevRAM){
    auto aux = alei.getRAM();
    for(int i = 0; i < 128; i++){
@@ -111,7 +112,7 @@ void getRAMFreq(map<int, int>& RAMmap, ALEInterface& alei, auto& prevRAM){
    prevRAM = aux;
 }
 
-//para pasar del diccionario a un fichero para hacer el heatmap
+//parses map to file
 void mapToFile(string& filename, map<int, int>& RAMmap){
    ofstream RAMfile(filename);
    for(int i = 0; i < 128; i++){
@@ -130,9 +131,10 @@ int main(int argc, char **argv) {
    bool trainMode = (argc == 5 && string(argv[2]) == "train");
    bool datasetMode = (argc == 4 && string(argv[2]) == "dataset");
    bool heatmapMode = (argc == 4 && string(argv[2]) == "heatmap");
-   
+   bool modelMode = (argc == 4 && string(argv[2]) == "model");
+
    // Check parameters and modes
-   if (!trainMode && !datasetMode && !heatmapMode)
+   if (!trainMode && !datasetMode && !heatmapMode && !modelMode)
       usage(argv[0]);
 
    // Configure alei object.
@@ -230,10 +232,79 @@ int main(int argc, char **argv) {
       NeuralNetwork nn({128, 64, 32, dataHelper.getOutputLayerSize()});
 
       nn.train(dataHelper.getInputs(), dataHelper.getTargets(),200, 0.01, "tanh");
-      
 
-
+      nn.saveModel(DSTfile);
    }
+
+   if(modelMode){
+      string ORGfile = string (argv[3]);
+
+      NeuralNetwork nn(ORGfile);
+
+      cout << "MODEL LOADED. STARTING AUTOMATIC PLAY" << endl;
+
+      // Init
+      std::srand(static_cast<uint32_t>(std::time(0)));
+      uint32_t step{};
+      bool manual = {true};
+      SDL_Event ev;
+      int32_t lives {alei.lives() };
+
+      while ( !alei.game_over() && step < maxSteps ) { 
+         while(SDL_PollEvent(&ev)){
+            if(ev.type == SDL_KEYDOWN && ev.key.keysym.sym == SDLK_m){
+               manual = !manual;
+            }
+         }
+
+         if(alei.lives() < lives){
+            lives = alei.lives();
+            alei.act(PLAYER_A_FIRE);
+         }
+
+         if(manual){
+            totalReward += manualStep(alei);
+         }else{
+            //automatic play using the model
+            auto RAMArr = alei.getRAM();
+            Matrix input_matrix(128, 1);
+            for(int i = 0; i < 128; i++){
+               input_matrix.at(i, 0) = static_cast<double>(RAMArr.get(i)) / 255.0; //normalize RAM byte value
+            }
+
+            int predictedAction = nn.predictOne(input_matrix, "tanh");
+
+               Action action = PLAYER_A_NOOP;
+
+            switch (predictedAction){
+               case 0:
+                  action = PLAYER_A_NOOP;
+                  break;
+               case 1:
+                  action = PLAYER_A_RIGHTFIRE;
+                  break;
+               case 2:
+                  action = PLAYER_A_LEFTFIRE;
+                  break;
+               case 3:
+                  action = PLAYER_A_UPFIRE;
+                  break;
+               case 4:
+                  action = PLAYER_A_LEFT;
+                  break;
+               case 5:
+                  action = PLAYER_A_RIGHT;
+                  break;
+               default:
+                  action = PLAYER_A_NOOP; //in case of error
+                  break;
+            }
+
+            totalReward += alei.act(action);
+         }
+         
+         ++step;
+      }  
 
    return 0;
 }
