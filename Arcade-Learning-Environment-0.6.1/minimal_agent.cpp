@@ -250,7 +250,7 @@ int main(int argc, char **argv) {
       // Init
       std::srand(static_cast<uint32_t>(std::time(0)));
       uint32_t step{};
-      bool manual = {true};
+      bool manual = {false};
       SDL_Event ev;
       int32_t lives {alei.lives() };
 
@@ -279,6 +279,8 @@ int main(int argc, char **argv) {
             int predictedAction = nn.predictOne(input_matrix, "tanh");
 
                Action action = PLAYER_A_NOOP;
+
+            cout << predictedAction << endl;
 
             switch (predictedAction){
                case 0:
