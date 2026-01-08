@@ -188,36 +188,55 @@ class DataHelper{
 
     public:
         DataHelper(const string& file) : filename(file) {
+            srand(time(0));
+
             ifstream infile(filename);
             if (infile.is_open()) {
-                
                 string line;
-                Matrix input_matrix(128, 1); //assuming 128 RAM bytes as input
-                Matrix target_matrix(6, 1); //assuming 6 possible actions as output
-
+                
                 while (getline(infile, line)) {
                     if (line.empty()) continue;
+                    
                     stringstream ss(line);
+                    
+                    Matrix input_matrix(128, 1); 
+                    Matrix target_matrix(6, 1); 
+
                     int val;
+                    
                     for (int i = 0; i < 128; ++i) {
                         ss >> val;
-                        input_matrix.at(i, 0) = static_cast<double>(val) / 255.0; //normalize RAM byte value
+                        input_matrix.at(i, 0) = static_cast<double>(val) / 255.0; 
                     }
-                    ss >> val; //read action
-                    target_matrix.at(val, 0) = 1.0;
+                    
+                    if (!(ss >> val)) continue; 
+                    
+                    int repeticiones = 1;
 
-                    inputs.push_back(input_matrix);
-                    targets.push_back(target_matrix);
+                    if (val == 0) { 
+                        if ((rand() % 100) < 80) repeticiones = 0; 
+                    }
+                    else if (val == 1 || val == 2) { 
+                        repeticiones = 15; 
+                    }
+                    else if (val == 3) {
+                        repeticiones = 2; 
+                    }
 
-                    // Reset matrices for next line
-                    input_matrix = Matrix(128, 1);
-                    target_matrix = Matrix(6, 1);
+                    if (repeticiones > 0 && val >= 0 && val < 6) {
+                        target_matrix.at(val, 0) = 1.0;
+
+                        for(int k = 0; k < repeticiones; ++k) {
+                            inputs.push_back(input_matrix);
+                            targets.push_back(target_matrix);
+                        }
+                    }
                 }
 
                 infile.close();
             }
             else {
-                cerr << "ERROR: Could not open data file." << endl;
+                cerr << "ERROR: Could not open data file: " << filename << endl;
                 exit(-1);
             }
         }
