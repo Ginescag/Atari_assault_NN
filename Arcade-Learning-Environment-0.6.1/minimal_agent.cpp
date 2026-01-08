@@ -10,7 +10,7 @@
 #include "NeuralNetwork.h"
 using namespace std;
 // Constants
-constexpr uint32_t maxSteps = 500;
+constexpr uint32_t maxSteps = 7500;
 
 
 string getPlayerAction(ALEInterface& alei){
@@ -125,13 +125,32 @@ void mapToFile(string& filename, map<int, int>& RAMmap){
 /// MAIN PROGRAM
 ///////////////////////////////////////////////////////////////////////////////
 int main(int argc, char **argv) {
-   reward_t totalReward{};
-   ALEInterface alei{};
-
    bool trainMode = (argc == 5 && string(argv[2]) == "train");
    bool datasetMode = (argc == 4 && string(argv[2]) == "dataset");
    bool heatmapMode = (argc == 4 && string(argv[2]) == "heatmap");
    bool modelMode = (argc == 4 && string(argv[2]) == "model");
+
+   if(trainMode){
+      //retrieves info from the data set, normalizes it (y label), trains the model on top of a MLP library (TO-DO)
+
+      string ORGfile = string (argv[3]);
+      string DSTfile = string (argv[4]);
+
+      DataHelper dataHelper(ORGfile);
+
+      vector<unsigned int> topology = {128, 64, 32, (unsigned int)dataHelper.getOutputLayerSize()};
+      
+      NeuralNetwork nn(topology);
+
+      nn.train(dataHelper.getInputs(), dataHelper.getTargets(),200, 0.01, "tanh");
+
+      nn.saveModel(DSTfile);
+
+      return 0;
+   }
+   
+   reward_t totalReward{};
+   ALEInterface alei{};
 
    // Check parameters and modes
    if (!trainMode && !datasetMode && !heatmapMode && !modelMode)
@@ -219,21 +238,6 @@ int main(int argc, char **argv) {
 
       std::cout << "DATA COLLECTED" << std::endl;
 
-   }
-
-   if(trainMode){
-      //retrieves info from the data set, normalizes it (y label), trains the model on top of a MLP library (TO-DO)
-
-      string ORGfile = string (argv[3]);
-      string DSTfile = string (argv[4]);
-
-      DataHelper dataHelper(ORGfile);
-
-      NeuralNetwork nn({128, 64, 32, dataHelper.getOutputLayerSize()});
-
-      nn.train(dataHelper.getInputs(), dataHelper.getTargets(),200, 0.01, "tanh");
-
-      nn.saveModel(DSTfile);
    }
 
    if(modelMode){
