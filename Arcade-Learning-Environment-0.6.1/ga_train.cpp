@@ -29,11 +29,11 @@ static const Action ACTIONS[OUTPUTS] = {
 
 struct GAConfig {
     int population = 50;
-    int generations = 40;
+    int generations = 60;
     int elite = 2;
 
-    int episodes_per_individual = 2;   // train fast; validate later with 3
-    int max_steps = 6000;             // safety cap
+    int episodes_per_individual = 1;   // train fast; validate later with 3
+    int max_steps = 18000;             // safety cap
     int base_seed = 0;
 
     int tournament_k = 3;
@@ -65,11 +65,6 @@ static double run_episode(ALEInterface& ale, NeuralNetwork& nn, int max_steps) {
     int step = 0;
 
     while (!ale.game_over() && step < max_steps) {
-        // same trick you already use: fire when life decreases
-        if (ale.lives() < lives) {
-            lives = ale.lives();
-            ale.act(PLAYER_A_FIRE);
-        }
 
         auto ram = ale.getRAM();
         Matrix x(INPUTS, 1);
@@ -88,31 +83,21 @@ static double run_episode(ALEInterface& ale, NeuralNetwork& nn, int max_steps) {
     return total;
 }
 
-static double eval_fitness(const std::vector<double>& genome,
-                           const string& rom_path,
-                           const GAConfig& cfg,
-                           int seed_offset)
+static double eval_fitness(ALEInterface& ale,
+                           NeuralNetwork& nn,
+                           const std::vector<double>& genome,
+                           const GAConfig& cfg)
 {
-    ALEInterface ale;
-    ale.setFloat("repeat_action_probability", 0.0);
-    ale.setInt("random_seed", cfg.base_seed + seed_offset);
-
-    // For training speed:
-    ale.setBool("display_screen", false);
-    ale.setBool("sound", false);
-
-    ale.loadROM(rom_path);
-
-    NeuralNetwork nn({INPUTS, HIDDEN, OUTPUTS});
     nn.setParams(genome);
 
     double sum = 0.0;
     for (int ep = 0; ep < cfg.episodes_per_individual; ++ep) {
-        ale.setInt("random_seed", cfg.base_seed + seed_offset + 1000 * ep);
+        ale.setInt("random_seed", cfg.base_seed + ep);
         sum += run_episode(ale, nn, cfg.max_steps);
     }
     return sum / (double)cfg.episodes_per_individual;
 }
+
 
 static int tournament_select(const std::vector<double>& fit,
                              int k,
@@ -176,7 +161,8 @@ int main(int argc, char** argv) {
 
     GAConfig cfg;
 
-    NeuralNetwork proto({INPUTS, HIDDEN, OUTPUTS});
+    NeuralNetwork proto(std::vector<unsigned int>{(unsigned)INPUTS, (unsigned)HIDDEN, (unsigned)OUTPUTS});
+
     const size_t G = proto.paramCount();
 
     std::mt19937 rng(12345);
@@ -189,10 +175,21 @@ int main(int argc, char** argv) {
     std::vector<double> best_genome;
     double best_fit = -1e18;
 
+    ALEInterface ale;
+    ale.setFloat("repeat_action_probability", 0.0);
+    ale.setInt("random_seed", cfg.base_seed);
+    ale.setBool("display_screen", false);
+    ale.setBool("sound", false);
+    ale.loadROM(rom_path);
+
+    NeuralNetwork nn(std::vector<unsigned int>{
+        (unsigned)INPUTS, (unsigned)HIDDEN, (unsigned)OUTPUTS
+    });
+
     for (int gen = 0; gen < cfg.generations; ++gen) {
         // evaluate
         for (int i = 0; i < cfg.population; ++i) {
-            fit[i] = eval_fitness(pop[i], rom_path, cfg, gen * 10000 + i);
+            fit[i] = eval_fitness(ale, nn, pop[i], cfg);
         }
 
         int bi = (int)std::distance(fit.begin(), std::max_element(fit.begin(), fit.end()));
@@ -230,6 +227,37 @@ int main(int argc, char** argv) {
 
         pop = std::move(next);
     }
+
+    auto eval_many = [&](int seed0, int n) {
+    nn.setParams(best_genome);
+    std::vector<double> scores;
+    scores.reserve(n);
+
+    for (int i = 0; i < n; ++i) {
+        ale.setInt("random_seed", seed0 + i);
+        double s = run_episode(ale, nn, cfg.max_steps);
+        scores.push_back(s);
+    }
+
+    double mean = std::accumulate(scores.begin(), scores.end(), 0.0) / scores.size();
+
+    double var = 0.0;
+    for (double s : scores) var += (s - mean) * (s - mean);
+    var /= scores.size();
+    double sd = std::sqrt(var);
+
+    auto mn = *std::min_element(scores.begin(), scores.end());
+    auto mx = *std::max_element(scores.begin(), scores.end());
+
+    std::cout << "[VALID] n=" << n
+              << " mean=" << mean
+              << " sd=" << sd
+              << " min=" << mn
+              << " max=" << mx << "\n";
+};
+
+eval_many(1000, 20);
+
 
     write_header(out_header, best_genome);
     std::cout << "Wrote best genome to: " << out_header
