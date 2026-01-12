@@ -161,6 +161,8 @@ class Matrix {
             }
         }
 
+        void XavierInit(){}
+
         void RandIntMat(int minVal, int maxVal){
             for (unsigned int i = 0; i < rows; ++i) {
                 for (unsigned int j = 0; j < cols; ++j) {
