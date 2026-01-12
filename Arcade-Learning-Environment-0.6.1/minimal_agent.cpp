@@ -273,7 +273,7 @@ int main(int argc, char **argv) {
             auto RAMArr = alei.getRAM();
             Matrix input_matrix(128, 1);
             for(int i = 0; i < 128; i++){
-               input_matrix.at(i, 0) = static_cast<double>(RAMArr.get(i)) / 255.0; //normalize RAM byte value
+               input_matrix.at(i, 0) = (static_cast<double>(RAMArr.get(i)) - 128.0) / 128.0; //normalize RAM byte value
             }
 
             int predictedAction = nn.predictOne(input_matrix, "tanh");
