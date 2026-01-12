@@ -1,14 +1,11 @@
 #include <iostream>
 #include <vector>
-#include "NeuralNetwork.h" // Asegúrate de que tu fichero se llama así
-
+#include "NeuralNetwork.h"
 using namespace std;
 
 int main() {
     cout << "=== PRUEBA DE APRENDIZAJE: OPERACION XOR ===" << endl;
 
-    // 1. PREPARAR DATOS XOR
-    // Inputs: (0,0), (0,1), (1,0), (1,1)
     vector<Matrix> inputs;
     vector<Matrix> targets;
 
@@ -33,9 +30,6 @@ int main() {
     inputs.push_back(i4); targets.push_back(t4);
 
 
-    // 2. CONFIGURAR LA RED
-    // Topología: 2 entradas -> 4 ocultas -> 1 salida
-    // (Necesitamos capas ocultas para resolver XOR)
     vector<unsigned int> topology = {2, 4, 1};
     NeuralNetwork nn(topology);
 
@@ -46,7 +40,7 @@ int main() {
     nn.train(inputs, targets, 5000, 0.1, "tanh");
 
 
-    // 4. VERIFICAR RESULTADOS
+    // 4. VERIFICAR RESULTADOS 
     cout << "\n=== RESULTADOS FINALES ===" << endl;
     for(size_t i = 0; i < inputs.size(); ++i) {
         Matrix out = nn.feedforward(inputs[i], "tanh");

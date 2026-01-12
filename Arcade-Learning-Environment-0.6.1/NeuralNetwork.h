@@ -169,6 +169,8 @@ class Matrix {
             }
         }
 
+        void xavierInit(){}
+
         friend ostream& operator<<(ostream& os, const Matrix& mat) {
             for (unsigned int i = 0; i < mat.rows; ++i) {
                 for (unsigned int j = 0; j < mat.cols; ++j) {
@@ -206,7 +208,7 @@ class DataHelper{
                     
                     for (int i = 0; i < 128; ++i) {
                         ss >> val;
-                        input_matrix.at(i, 0) = static_cast<double>(val) / 255.0; 
+                        input_matrix.at(i, 0) = (static_cast<double>(val) - 128.0) / 128.0; //we normalize the input between -1 and 1
                     }
                     
                     if (!(ss >> val)) continue; 
@@ -449,7 +451,7 @@ class NeuralNetwork {
             }
         }
         
-        void train(const vector<Matrix>& inputs, const vector<Matrix>& targets, int epochs, double learning_rate, string activation_func = "tanh") {
+        void train(const vector<Matrix>& inputs, const vector<Matrix>& targets, int epochs, double learning_rate, string activation_func = "tanh", bool verbose = true) {
             // Basic validation
             if (inputs.size() != targets.size()) {
                 cerr << "Error: Number of inputs and targets do not match." << endl;
@@ -468,7 +470,7 @@ class NeuralNetwork {
                     backpropagate(targets[i], learning_rate, activation_func);
                 }
 
-                if (epoch % 10 == 0 || epoch == 1 || epoch == epochs) {
+                if (verbose &&(epoch % 10 == 0 || epoch == 1 || epoch == epochs)) {
                      cout << "Epoch: " << epoch  << "/" << epochs 
                           << " | Avg Error (Loss): " << total_loss / inputs.size() << endl;
                 }
