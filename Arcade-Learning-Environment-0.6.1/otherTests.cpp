@@ -47,7 +47,7 @@ class DonutProblem {
             }
 
             // --- GENERAR DATOS DE TEST ---
-            for (int i = 0; i < samples / 5; ++i) {
+            for (int i = 0; i < samples; ++i) {
                 double x = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
                 double y = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
                 double r = sqrt(x*x + y*y);
@@ -242,54 +242,70 @@ class ParityProblem {
         const vector<Matrix>& getTestTargets() const { return TestTargets; }
 };
 
+
+void HoeffdingInequality(int N, double E_in, double epsilon){
+    double ProbToBeInsideErrorBound = 1 - (2 * exp(-2 * (epsilon * epsilon) * N));
+
+    if (ProbToBeInsideErrorBound < 0) ProbToBeInsideErrorBound = 0.0;
+
+    cout << "==================== HOEFFDING INEQUALITY ====================" << endl;
+    cout << "Numero de muestras (N): " << N << endl;
+    cout << "Error de entrenamiento (E_in): " << E_in << endl;
+    cout << "Epsilon (tolerancia): " << epsilon << endl;
+    cout << "Probabilidad de estar dentro del limite de error: " << ProbToBeInsideErrorBound * 100 << "%" << endl;
+
+}
+
 int main() {
     cout << "========= PRUEBA DE APRENDIZAJE =========" << endl;
 
     // 1. creamos una instancia de uno de los problemas
-    ParityProblem parity(8, 1000);
+    DonutProblem donut(1000);
 
     // 2. CREAR Y ENTRENAR LA RED EN BASE A LOS DATOS GENERADOS DEl PROBLEMA SELECCIONADO
-    NeuralNetwork nn = parity.createAndTrainNetwork(100, 0.01, "tanh");
+    NeuralNetwork nn = donut.createAndTrainNetwork(100, 0.01, "tanh");
 
     // 3. VERIFICAR RESULTADOS EN DATOS DE TEST
-    const vector<Matrix>& testInputs = parity.getTestInputs();
-    const vector<Matrix>& testTargets = parity.getTestTargets();
+    const vector<Matrix>& testInputs = donut.getTestInputs();
+    const vector<Matrix>& testTargets = donut.getTestTargets();
     int correct = 0;
     for(size_t i = 0; i < testInputs.size(); ++i) {
         
         // ESTE CODIGO ES PARA PROBLEMAS DE CLASIFICACION MULTINOMIAL
         //realiza la prediccion
-        // int prediction = nn.predictOne(testInputs[i], "tanh");  
+        int prediction = nn.predictOne(testInputs[i], "tanh");  
  
-        // int realClass = 0;
-        // double maxTargetVal = testTargets[i].at(0, 0);
+        int realClass = 0;
+        double maxTargetVal = testTargets[i].at(0, 0);
 
-        // for(int k = 1; k < testTargets[i].getRows(); ++k) {
-        //     if(testTargets[i].at(k, 0) > maxTargetVal) { 
-        //         maxTargetVal = testTargets[i].at(k, 0);
-        //         realClass = k;
-        //     }
-        // }
+        for(int k = 1; k < testTargets[i].getRows(); ++k) {
+            if(testTargets[i].at(k, 0) > maxTargetVal) { 
+                maxTargetVal = testTargets[i].at(k, 0);
+                realClass = k;
+            }
+        }
 
-        // if (prediction == realClass) {
-        //     correct++;
-        // }
+        if (prediction == realClass) {
+            correct++;
+        }
 
 
         //ESTE CODIGO ES PARA EL PROBLEMA DE PARIDAD (SALIDA UNICA)
-        Matrix output = nn.feedforward(testInputs[i], "tanh");
-        double predictedVal = output.at(0, 0);
-        double targetVal = testTargets[i].at(0, 0);
+        // Matrix output = nn.feedforward(testInputs[i], "tanh");
+        // double predictedVal = output.at(0, 0);
+        // double targetVal = testTargets[i].at(0, 0);
 
-        // Acierto si tienen el mismo signo
-        // (Ambos positivos O Ambos negativos)
-        if ((predictedVal > 0 && targetVal > 0) || (predictedVal < 0 && targetVal < 0)) {
-            correct++;
-        }
+        // // Acierto si tienen el mismo signo
+        // // (Ambos positivos O Ambos negativos)
+        // if ((predictedVal > 0 && targetVal > 0) || (predictedVal < 0 && targetVal < 0)) {
+        //     correct++;
+        // }
     }
 
     double accuracy = (double)correct / testInputs.size() * 100.0;
     cout << "\nPrecision total en datos de test: " << accuracy << "%" << endl;
+
+    HoeffdingInequality(testInputs.size(), 1 - (accuracy / 100.0), 0.05);
 
     return 0;
 }
