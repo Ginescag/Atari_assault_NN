@@ -161,17 +161,32 @@ class Matrix {
             }
         }
 
-        void XavierInit(){}
-
-        void RandIntMat(int minVal, int maxVal){
+        void InitToZero(){
             for (unsigned int i = 0; i < rows; ++i) {
                 for (unsigned int j = 0; j < cols; ++j) {
-                    data[i][j] = rand() % (maxVal - minVal + 1) + minVal; // Random integers between minVal and maxVal
+                    data[i][j] = 0.0;
+                }
+            }
+        }
+        
+        // Random doubles between minVal and maxVal
+        void RandDoubleMat(double minVal, double maxVal){
+            for (unsigned int i = 0; i < rows; ++i) {
+                for (unsigned int j = 0; j < cols; ++j) {
+                    data[i][j] = ((double) rand() / RAND_MAX) * (maxVal - minVal) + minVal; 
                 }
             }
         }
 
-        void xavierInit(){}
+        //Xavier initialization for weights generates a limit based on the number of input and output neurons and initializes weights within that range
+        void XavierInit(){
+            double limit = sqrt(6.0 / (rows + cols));
+            for (unsigned int i = 0; i < rows; ++i) {
+                for (unsigned int j = 0; j < cols; ++j) {
+                    data[i][j] = ((double) rand() / RAND_MAX) * 2 * limit - limit; // Random values between -limit and limit
+                }
+            }
+        }
 
         friend ostream& operator<<(ostream& os, const Matrix& mat) {
             for (unsigned int i = 0; i < mat.rows; ++i) {
@@ -342,11 +357,11 @@ class NeuralNetwork {
         NeuralNetwork(const vector<unsigned int>& layer_sizes) : layers(layer_sizes) {
             for(int i = 0; i < layers.size() - 1; ++i) {
                 Matrix weight_matrix(layers[i + 1], layers[i]);
-                weight_matrix.RandMat();
+                weight_matrix.XavierInit();
                 weights.push_back(weight_matrix);
 
                 Matrix bias_matrix(layers[i + 1], 1);
-                bias_matrix.RandMat();
+                bias_matrix.InitToZero();
                 biases.push_back(bias_matrix);
             }
         }
@@ -504,10 +519,9 @@ class NeuralNetwork {
         }
 
         int predictOne(const Matrix& input, string activation_func = "tanh") {
-            // 1. Obtener salida de la red
             Matrix output = feedforward(input, activation_func);
             
-            // 2. ArgMax: Buscar el índice con el valor más alto
+  
             int maxIndex = 0;
             double maxValue = output.at(0, 0);
             
@@ -533,10 +547,9 @@ class NeuralNetwork {
             }
             file << endl;
 
-            // 2. Guardar Pesos
             // Recorremos cada matriz de pesos
             for (const auto& w : weights) {
-                file << w.getRows() << " " << w.getCols() << endl; // Cabecera de matriz
+                file << w.getRows() << " " << w.getCols() << endl;
                 for (unsigned int i = 0; i < w.getRows(); ++i) {
                     for (unsigned int j = 0; j < w.getCols(); ++j) {
                         file << w.at(i, j) << " ";
@@ -545,7 +558,6 @@ class NeuralNetwork {
                 }
             }
 
-            // 3. Guardar Sesgos (Biases)
             for (const auto& b : biases) {
                 file << b.getRows() << " " << b.getCols() << endl;
                 for (unsigned int i = 0; i < b.getRows(); ++i) {
@@ -565,7 +577,6 @@ class NeuralNetwork {
             ifstream file(filename);
             if (!file.is_open()) return false;
 
-            // 1. Cargar Topología
             unsigned int numLayers;
             file >> numLayers;
             
@@ -576,13 +587,10 @@ class NeuralNetwork {
                 layers.push_back(size);
             }
 
-            // 2. Reconstruir estructura (vaciar y redimensionar vectores)
             weights.clear();
             biases.clear();
-            activations.clear(); // Limpiar activaciones antiguas
+            activations.clear();
 
-            // 3. Cargar Pesos
-            // Sabemos que hay (numLayers - 1) matrices de pesos
             for (unsigned int i = 0; i < numLayers - 1; ++i) {
                 unsigned int rows, cols;
                 file >> rows >> cols;
@@ -596,7 +604,6 @@ class NeuralNetwork {
                 weights.push_back(w);
             }
 
-            // 4. Cargar Sesgos
             for (unsigned int i = 0; i < numLayers - 1; ++i) {
                 unsigned int rows, cols;
                 file >> rows >> cols;
