@@ -831,7 +831,7 @@ private:
             if (u <= 0.5) {
                 const double xy = 1.0 - delta1;
                 double val = 2.0 * u + (1.0 - 2.0 * u) * std::pow(xy, eta + 1.0);
-                // ✅ FIX: evitar val < 0 por redondeos extremos
+                //FIX: evitar val < 0 por redondeos extremos
                 if (val < 0.0) val = 0.0;
                 deltaq = std::pow(val, mut_pow) - 1.0;
             } else {
