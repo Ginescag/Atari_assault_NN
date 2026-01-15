@@ -8,9 +8,79 @@
 #include "src/ale_interface.hpp"
 #include <SDL/SDL.h>
 #include "NeuralNetwork.h"
+#include "ga_weights.h"
+
 using namespace std;
 // Constants
 constexpr uint32_t maxSteps = 500;
+
+static constexpr int GA_INPUTS  = 128;
+static constexpr int GA_HIDDEN  = 32;
+static constexpr int GA_OUTPUTS = 7;
+
+static const Action GA_ACTIONS[GA_OUTPUTS] = {
+    PLAYER_A_NOOP,
+    PLAYER_A_FIRE,
+    PLAYER_A_LEFT,
+    PLAYER_A_RIGHT,
+    PLAYER_A_LEFTFIRE,
+    PLAYER_A_RIGHTFIRE,
+    PLAYER_A_UPFIRE
+};
+
+static inline double normalize_ram(uint8_t b) {
+    return (double(b) / 127.5) - 1.0; // [0,255] -> [-1,1]
+}
+
+static int argmax_colvec(const Matrix& out) {
+    int best = 0;
+    double bestv = out.at(0,0);
+    for (unsigned i = 1; i < out.getRows(); ++i) {
+        double v = out.at(i,0);
+        if (v > bestv) { bestv = v; best = (int)i; }
+    }
+    return best;
+}
+
+static double runGAMode(ALEInterface& ale, const std::string& activation_func, int max_steps) {
+    NeuralNetwork nn(std::vector<unsigned int>{
+        (unsigned)GA_INPUTS, (unsigned)GA_HIDDEN, (unsigned)GA_OUTPUTS
+    });
+
+    // Cargar pesos embebidos
+    std::vector<double> params(GA_PARAMS, GA_PARAMS + GA_PARAM_COUNT);
+    nn.setParams(params);
+
+    ale.reset_game();
+
+    int lives = ale.lives();
+    double total = 0.0;
+    int step = 0;
+
+    while (!ale.game_over() && step < max_steps) {
+        // Misma heurística que usaste en training (si quieres consistencia)
+        if (ale.lives() < lives) {
+            lives = ale.lives();
+            ale.act(PLAYER_A_FIRE);
+        }
+
+        auto ram = ale.getRAM();
+        Matrix x(GA_INPUTS, 1);
+        for (int i = 0; i < GA_INPUTS; ++i) {
+            x.at(i, 0) = normalize_ram((uint8_t)ram.get(i));
+        }
+
+        Matrix out = nn.feedforward(x, activation_func);
+        int a = argmax_colvec(out);
+
+        reward_t r = ale.act(GA_ACTIONS[a]);
+        total += (double)r;
+
+        ++step;
+    }
+
+    return total;
+}
 
 
 string getPlayerAction(ALEInterface& alei){
@@ -73,11 +143,15 @@ reward_t manualStep(ALEInterface& alei){
 ///////////////////////////////////////////////////////////////////////////////
 
 void usage(char const* pname) {
-   std::cerr
-      << "\nUSAGE:\n" 
-      << "   " << pname << " <romfile>" << " (heatmap | dataset | train <ORGfile>) <DSTfile>\n";
-   exit(-1);
+  std::cerr
+    << "\nUSAGE:\n"
+    << "  " << pname << " <romfile> heatmap <DSTfile>\n"
+    << "  " << pname << " <romfile> dataset <DSTfile>\n"
+    << "  " << pname << " <romfile> train <ORGfile> <DSTfile>\n"
+    << "  " << pname << " <romfile> ga [max_steps]\n";
+  exit(-1);
 }
+
 
 //this retrieves every RAM byte at a given step and the action the player made in that state and saves that info inside the file 
 void collectData(ALEInterface& alei, string filename){
@@ -130,10 +204,12 @@ int main(int argc, char **argv) {
    bool trainMode = (argc == 5 && string(argv[2]) == "train");
    bool datasetMode = (argc == 4 && string(argv[2]) == "dataset");
    bool heatmapMode = (argc == 4 && string(argv[2]) == "heatmap");
+   bool gaMode      = (argc >= 3 && string(argv[2]) == "ga");
+
    
    // Check parameters and modes
-   if (!trainMode && !datasetMode && !heatmapMode)
-      usage(argv[0]);
+   if (!trainMode && !datasetMode && !heatmapMode && !gaMode)
+    usage(argv[0]);
 
    // Configure alei object.
    alei.setInt  ("random_seed", 0);
@@ -142,7 +218,29 @@ int main(int argc, char **argv) {
    alei.setBool ("sound", true);
    alei.loadROM (argv[1]);
   
-  
+   if (gaMode) {
+    int max_steps = 18000;
+    int seed = 0;
+
+    if (argc >= 4) max_steps = std::stoi(argv[3]);
+    if (argc >= 5) seed = std::stoi(argv[4]);
+
+    // Configuración para evaluación rápida y reproducible
+    alei.setInt  ("random_seed", seed);
+    alei.setFloat("repeat_action_probability", 0.0f);
+    alei.setBool ("display_screen", true);   // pon false si quieres medir velocidad
+    alei.setBool ("sound", false);
+
+    // Cargar ROM una sola vez (aquí)
+    alei.loadROM(argv[1]);
+
+    double score = runGAMode(alei, "tanh", max_steps);
+    std::cout << "GA score = " << score << "\n";
+    return 0;
+   }
+
+
+
    if(heatmapMode){
       string RAMfile = string(argv[3]);
       auto prevRAM = alei.getRAM();
@@ -227,13 +325,19 @@ int main(int argc, char **argv) {
 
       DataHelper dataHelper(ORGfile);
 
-      NeuralNetwork nn({128, 64, 32, dataHelper.getOutputLayerSize()});
+      NeuralNetwork nn(std::vector<unsigned int>{
+         128u, 64u, 32u, (unsigned)dataHelper.getOutputLayerSize()
+      });
 
       nn.train(dataHelper.getInputs(), dataHelper.getTargets(),200, 0.01, "tanh");
       
 
 
    }
+
+
+   
+
 
    return 0;
 }
