@@ -9,8 +9,8 @@
 
 using namespace std;
 
-#include "ga.h"
-#include "ga_problems.h"
+#include "new_ga.h"
+#include "problemas_ga.h"
 
 using namespace ga;
 
@@ -206,7 +206,7 @@ static shared_ptr<IProblem> makeProblem(const string& name,
         cfg.obj = Objective::Maximize;
         cfg.episodes_per_eval = po.episodes;
         cfg.max_steps_per_episode = po.steps;
-        /bounds de -1 y +1 para cada gen
+        //bounds de -1 y +1 para cada gen
         cfg.bounds.resize(cfg.genome_size);
         for (size_t i = 0; i < cfg.genome_size; i++) {
             cfg.bounds[i].lo = -1.0;

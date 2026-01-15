@@ -4,6 +4,7 @@
 #include <string>
 #include <functional>
 #include <limits>
+#include "new_ga.h"
 
 using namespace std;
 
@@ -12,8 +13,6 @@ namespace ga {
 // forward
 class GeneticAlgorithm;
 
-// Se asume que esto existe en tu proyecto
-#include "ga.h"
 
 // ------------------------------------------------------------
 // 1) Sphere (minimiza)
@@ -290,5 +289,5 @@ private:
 private:
     Config cfg_;
     const GeneticAlgorithm* ga_ = nullptr;
-}
+};
 } // namespace ga

@@ -1,4 +1,4 @@
-#include "ga_problems.h"
+#include "problemas_ga.h"
 
 #include <cmath>
 #include <sstream>
@@ -348,7 +348,7 @@ double XorProblem::evaluate(const Genome& genome) const {
 
     return (double)correct;
 }
-s//mas logs
+//mas logs
 string XorProblem::describe(const Genome& genome) const {
     ostringstream oss;
     oss << "XOR bits=[";
