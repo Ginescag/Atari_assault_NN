@@ -128,7 +128,22 @@ int main(int argc, char **argv) {
    bool trainMode = (argc == 5 && string(argv[2]) == "train");
    bool datasetMode = (argc == 4 && string(argv[2]) == "dataset");
    bool heatmapMode = (argc == 4 && string(argv[2]) == "heatmap");
-   bool modelMode = (argc == 4 && string(argv[2]) == "model");
+
+   // Check parameters and modes
+   if (!trainMode && !datasetMode && !heatmapMode)
+      usage(argv[0]);
+
+   reward_t totalReward{};
+   ALEInterface alei{};
+
+
+   // Configure alei object.
+   alei.setInt  ("random_seed", 0);
+   alei.setFloat("repeat_action_probability", 0);
+   alei.setBool ("display_screen", true);
+   alei.setBool ("sound", true);
+   alei.loadROM (argv[1]);
+  
 
    if(trainMode){
       //retrieves info from the data set, normalizes it (y label), trains the model on top of a MLP library (TO-DO)
@@ -138,31 +153,84 @@ int main(int argc, char **argv) {
 
       DataHelper dataHelper(ORGfile);
 
-      vector<unsigned int> topology = {128, 64, 32, (unsigned int)dataHelper.getOutputLayerSize()};
+      vector<unsigned int> topology = {128, 128, 64, (unsigned int)dataHelper.getOutputLayerSize()};
       
       NeuralNetwork nn(topology);
 
-      nn.train(dataHelper.getInputs(), dataHelper.getTargets(),200, 0.01, "tanh");
+      nn.train(dataHelper.getInputs(), dataHelper.getTargets(),50, 0.02, "tanh");
 
+      cout << "MODEL TRAINED. STARTING AUTOMATIC PLAY" << endl;
+
+      // Init
+      std::srand(static_cast<uint32_t>(std::time(0)));
+      uint32_t step{};
+      bool manual = {false};
+      SDL_Event ev;
+      int32_t lives {alei.lives() };
+
+      while ( !alei.game_over() && step < maxSteps ) { 
+         while(SDL_PollEvent(&ev)){
+            if(ev.type == SDL_KEYDOWN && ev.key.keysym.sym == SDLK_m){
+               manual = !manual;
+            }
+         }
+
+         if(alei.lives() < lives){
+            lives = alei.lives();
+            alei.act(PLAYER_A_FIRE);
+         }
+
+         if(manual){
+            totalReward += manualStep(alei);
+         }else{
+            //automatic play using the model
+            auto RAMArr = alei.getRAM();
+            Matrix input_matrix(128, 1);
+            for(int i = 0; i < 128; i++){
+               input_matrix.at(i, 0) = (static_cast<double>(RAMArr.get(i)) - 128.0) / 128.0; //normalize RAM byte value
+            }
+
+            int predictedAction = nn.predictOne(input_matrix, "tanh");
+
+               Action action = PLAYER_A_NOOP;
+
+            cout << predictedAction << endl;
+
+            switch (predictedAction){
+               case 0:
+                  action = PLAYER_A_NOOP;
+                  break;
+               case 1:
+                  action = PLAYER_A_RIGHTFIRE;
+                  break;
+               case 2:
+                  action = PLAYER_A_LEFTFIRE;
+                  break;
+               case 3:
+                  action = PLAYER_A_UPFIRE;
+                  break;
+               case 4:
+                  action = PLAYER_A_LEFT;
+                  break;
+               case 5:
+                  action = PLAYER_A_RIGHT;
+                  break;
+               default:
+                  action = PLAYER_A_NOOP; //in case of error
+                  break;
+            }
+
+            totalReward += alei.act(action);
+         }
+         
+         ++step;
+      }
+
+      //lastly we save the model 
       nn.saveModel(DSTfile);
 
       return 0;
    }
-   
-   reward_t totalReward{};
-   ALEInterface alei{};
-
-   // Check parameters and modes
-   if (!trainMode && !datasetMode && !heatmapMode && !modelMode)
-      usage(argv[0]);
-
-   // Configure alei object.
-   alei.setInt  ("random_seed", 0);
-   alei.setFloat("repeat_action_probability", 0);
-   alei.setBool ("display_screen", true);
-   alei.setBool ("sound", true);
-   alei.loadROM (argv[1]);
-  
   
    if(heatmapMode){
       string RAMfile = string(argv[3]);
@@ -239,79 +307,6 @@ int main(int argc, char **argv) {
       std::cout << "DATA COLLECTED" << std::endl;
 
    }
-
-   if(modelMode){
-      string ORGfile = string (argv[3]);
-
-      NeuralNetwork nn(ORGfile);
-
-      cout << "MODEL LOADED. STARTING AUTOMATIC PLAY" << endl;
-
-      // Init
-      std::srand(static_cast<uint32_t>(std::time(0)));
-      uint32_t step{};
-      bool manual = {false};
-      SDL_Event ev;
-      int32_t lives {alei.lives() };
-
-      while ( !alei.game_over() && step < maxSteps ) { 
-         while(SDL_PollEvent(&ev)){
-            if(ev.type == SDL_KEYDOWN && ev.key.keysym.sym == SDLK_m){
-               manual = !manual;
-            }
-         }
-
-         if(alei.lives() < lives){
-            lives = alei.lives();
-            alei.act(PLAYER_A_FIRE);
-         }
-
-         if(manual){
-            totalReward += manualStep(alei);
-         }else{
-            //automatic play using the model
-            auto RAMArr = alei.getRAM();
-            Matrix input_matrix(128, 1);
-            for(int i = 0; i < 128; i++){
-               input_matrix.at(i, 0) = (static_cast<double>(RAMArr.get(i)) - 128.0) / 128.0; //normalize RAM byte value
-            }
-
-            int predictedAction = nn.predictOne(input_matrix, "tanh");
-
-               Action action = PLAYER_A_NOOP;
-
-            cout << predictedAction << endl;
-
-            switch (predictedAction){
-               case 0:
-                  action = PLAYER_A_NOOP;
-                  break;
-               case 1:
-                  action = PLAYER_A_RIGHTFIRE;
-                  break;
-               case 2:
-                  action = PLAYER_A_LEFTFIRE;
-                  break;
-               case 3:
-                  action = PLAYER_A_UPFIRE;
-                  break;
-               case 4:
-                  action = PLAYER_A_LEFT;
-                  break;
-               case 5:
-                  action = PLAYER_A_RIGHT;
-                  break;
-               default:
-                  action = PLAYER_A_NOOP; //in case of error
-                  break;
-            }
-
-            totalReward += alei.act(action);
-         }
-         
-         ++step;
-      }
-   }  
 
    return 0;
 }
