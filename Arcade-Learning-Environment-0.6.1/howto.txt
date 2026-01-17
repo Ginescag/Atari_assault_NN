@@ -1,0 +1,55 @@
+# Compilación y ejecución (Manjaro / Linux)
+
+Este proyecto se compila con `g++` en Manjaro Linux usando C++17.
+
+## Requisitos
+
+- Manjaro Linux (o cualquier Linux)
+- `g++` (GCC) con soporte C++17
+- `make`
+
+
+## Estructura de archivos de NN
+
+### Archivos usados para la Neural Network (NN):
+
+
+## Compilación NN
+
+
+## Ejecutar
+
+### Ejemplos
+
+# Limpieza
+
+
+## Estructura de archivos de GA
+
+### Archivos usados para el Algoritmo Genético (GA):
+
+main_ga.cpp → main de pruebas / CLI
+
+new_ga.cpp → implementación del motor GA + operadores
+
+problemas_ga.cpp → implementación de problemas (Sphere, Ackley, TSP, etc.)
+
+problemas_ga.h → cabecera de problemas
+
+
+## Compilación GA
+g++ -O3 -std=c++17 -Wall -Wextra -pedantic \
+  main_ga.cpp new_ga.cpp problemas_ga.cpp \
+  -o main_ga
+
+## Ejecutar
+./main_ga <problema> [opciones]
+
+### Ejemplos
+./main_ga xor --pop 40 --gen 80 --target 4
+./main_ga sphere --dim 20 --pop 80 --gen 300
+./main_ga rastrigin --dim 20 --pop 80 --gen 300
+
+
+# Limpieza
+rm -f main_ga

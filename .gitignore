@@ -36,6 +36,7 @@
 *.exe
 *.out
 *.app
+main_ga
 
 # debug information files
 *.dwo
