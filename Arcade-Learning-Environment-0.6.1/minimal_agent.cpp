@@ -76,7 +76,7 @@ reward_t manualStep(ALEInterface& alei){
 void usage(char const* pname) {
    std::cerr
       << "\nUSAGE:\n" 
-      << "   " << pname << " <romfile>" << " (heatmap <DSTfile> | dataset <DSTfile> | model <ORGfile> | train <ORGfile> <DSTfile>)\n";
+      << "   " << pname << " <romfile>" << " (heatmap <DSTfile> | dataset <DSTfile> | train <ORGfile> <DSTfile>)\n";
    exit(-1);
 }
 
