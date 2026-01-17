@@ -624,4 +624,17 @@ class NeuralNetwork {
 
 };
 
+void HoeffdingInequality(int N, double E_in, double epsilon){
+    double ProbToBeInsideErrorBound = 1 - (2 * exp(-2 * (epsilon * epsilon) * N));
+
+    if (ProbToBeInsideErrorBound < 0) ProbToBeInsideErrorBound = 0.0;
+
+    cout << "==================== HOEFFDING INEQUALITY ====================" << endl;
+    cout << "Numero de muestras (N): " << N << endl;
+    cout << "Error en la prueba (E_in): " << E_in << endl;
+    cout << "Epsilon (tolerancia): " << epsilon << endl;
+    cout << "Probabilidad de estar dentro del limite de error: " << ProbToBeInsideErrorBound * 100 << "%" << endl;
+
+}
+
 #endif

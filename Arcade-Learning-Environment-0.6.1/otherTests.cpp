@@ -73,10 +73,10 @@ class DonutProblem {
         }
         
         NeuralNetwork createAndTrainNetwork(int epochs = 200, double learning_rate = 0.1, string activation_func = "tanh") {
-            vector<unsigned int> topology = {2, 10, 10, 2}; 
+            vector<unsigned int> topology = {2, 24, 12, 6, 2}; 
             NeuralNetwork nn(topology);
             cout << "Entrenando la red para el problema del donut..." << endl;
-            nn.train(TrainInputs, TrainTargets, epochs, learning_rate, activation_func, false);
+            nn.train(TrainInputs, TrainTargets, epochs, learning_rate, activation_func, true);
             return nn;
         }
 
@@ -121,7 +121,7 @@ class QuadrantProblem{
 
             // Generar datos de prueba
 
-            for(int i = 0; i < samples / 5; i++){
+            for(int i = 0; i < samples; i++){
                 double x = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
                 double y = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
 
@@ -150,7 +150,7 @@ class QuadrantProblem{
         NeuralNetwork createAndTrainNetwork(int epochs = 200, double learning_rate = 0.1, string activation_func = "tanh") {
             vector<unsigned int> topology = {2, 10, 10, 4}; 
             NeuralNetwork nn(topology);
-            cout << "Entrenando la red para el problema del donut..." << endl;
+            cout << "Entrenando la red para el problema del cuadrante..." << endl;
             nn.train(inputs, targets, epochs, learning_rate, activation_func, true);
             return nn;
         }
@@ -199,7 +199,7 @@ class ParityProblem {
                 TrainTargets.push_back(target);
             }
             // --- GENERAR DATOS DE TEST ---
-            for (int i = 0; i < samples / 5; ++i) {
+            for (int i = 0; i < samples; ++i) {
                 
                 Matrix input(nBits, 1);
                 int onesCount = 0;
@@ -242,70 +242,131 @@ class ParityProblem {
         const vector<Matrix>& getTestTargets() const { return TestTargets; }
 };
 
+int main(int argc, char* argv[]) {
+    
+    bool donut = (argc == 3 && string(argv[1]) == "donut");
+    bool quadrant = (argc == 3 && string(argv[1]) == "quadrant");
+    bool parity = (argc == 4 && string(argv[1]) == "parity");
 
-void HoeffdingInequality(int N, double E_in, double epsilon){
-    double ProbToBeInsideErrorBound = 1 - (2 * exp(-2 * (epsilon * epsilon) * N));
+     // 1. SELECCIONAR EL PROBLEMA A RESOLVER
+   
+    if (!donut && !quadrant && !parity) {
+        cout << "Uso: " << argv[0] << " [donut|quadrant|parity <nBits>] <samples>" << endl;
+        return -1;
+    }
 
-    if (ProbToBeInsideErrorBound < 0) ProbToBeInsideErrorBound = 0.0;
-
-    cout << "==================== HOEFFDING INEQUALITY ====================" << endl;
-    cout << "Numero de muestras (N): " << N << endl;
-    cout << "Error de entrenamiento (E_in): " << E_in << endl;
-    cout << "Epsilon (tolerancia): " << epsilon << endl;
-    cout << "Probabilidad de estar dentro del limite de error: " << ProbToBeInsideErrorBound * 100 << "%" << endl;
-
-}
-
-int main() {
-    cout << "========= PRUEBA DE APRENDIZAJE =========" << endl;
-
-    // 1. creamos una instancia de uno de los problemas
-    DonutProblem donut(1000);
-
-    // 2. CREAR Y ENTRENAR LA RED EN BASE A LOS DATOS GENERADOS DEl PROBLEMA SELECCIONADO
-    NeuralNetwork nn = donut.createAndTrainNetwork(100, 0.01, "tanh");
-
-    // 3. VERIFICAR RESULTADOS EN DATOS DE TEST
-    const vector<Matrix>& testInputs = donut.getTestInputs();
-    const vector<Matrix>& testTargets = donut.getTestTargets();
     int correct = 0;
-    for(size_t i = 0; i < testInputs.size(); ++i) {
-        
-        // ESTE CODIGO ES PARA PROBLEMAS DE CLASIFICACION MULTINOMIAL
-        //realiza la prediccion
-        int prediction = nn.predictOne(testInputs[i], "tanh");  
- 
-        int realClass = 0;
-        double maxTargetVal = testTargets[i].at(0, 0);
+    int inputSize = 0;
 
-        for(int k = 1; k < testTargets[i].getRows(); ++k) {
-            if(testTargets[i].at(k, 0) > maxTargetVal) { 
-                maxTargetVal = testTargets[i].at(k, 0);
-                realClass = k;
+    if(donut) {
+        cout << "========= PRUEBA DE APRENDIZAJE - DONUT =========" << endl;
+        DonutProblem problem(stoi(argv[2]));
+        
+        // 2. CREAR Y ENTRENAR LA RED EN BASE A LOS DATOS GENERADOS DEl PROBLEMA SELECCIONADO
+        NeuralNetwork nn = problem.createAndTrainNetwork(120, 0.01, "tanh");
+        
+
+        // 3. VERIFICAR RESULTADOS EN DATOS DE TEST
+        const vector<Matrix>& testInputs = problem.getTestInputs();
+        const vector<Matrix>& testTargets = problem.getTestTargets();
+        correct = 0;
+        inputSize = testInputs.size();
+
+        for(size_t i = 0; i < testInputs.size(); ++i) {
+            
+            // ESTE CODIGO ES PARA PROBLEMAS DE CLASIFICACION MULTINOMIAL
+            //realiza la prediccion
+            int prediction = nn.predictOne(testInputs[i], "tanh");  
+    
+            int realClass = 0;
+            double maxTargetVal = testTargets[i].at(0, 0);
+
+            for(int k = 1; k < testTargets[i].getRows(); ++k) {
+                if(testTargets[i].at(k, 0) > maxTargetVal) { 
+                    maxTargetVal = testTargets[i].at(k, 0);
+                    realClass = k;
+                }
+            }
+
+            if (prediction == realClass) {
+                correct++;
             }
         }
 
-        if (prediction == realClass) {
-            correct++;
+    } else if (quadrant) {
+        cout << "========= PRUEBA DE APRENDIZAJE - CUADRANTES =========" << endl;
+        QuadrantProblem problem(stoi(argv[2]));
+
+        
+        // 2. CREAR Y ENTRENAR LA RED EN BASE A LOS DATOS GENERADOS DEl PROBLEMA SELECCIONADO
+        NeuralNetwork nn = problem.createAndTrainNetwork(100, 0.01, "tanh");
+
+        // 3. VERIFICAR RESULTADOS EN DATOS DE TEST
+        const vector<Matrix>& testInputs = problem.getTestInputs();
+        const vector<Matrix>& testTargets = problem.getTestTargets();
+        correct = 0;
+        inputSize = testInputs.size();
+
+        for(size_t i = 0; i < testInputs.size(); ++i) {
+            
+            // ESTE CODIGO ES PARA PROBLEMAS DE CLASIFICACION MULTINOMIAL
+            //realiza la prediccion
+            int prediction = nn.predictOne(testInputs[i], "tanh");  
+    
+            int realClass = 0;
+            double maxTargetVal = testTargets[i].at(0, 0);
+
+            for(int k = 1; k < testTargets[i].getRows(); ++k) {
+                if(testTargets[i].at(k, 0) > maxTargetVal) { 
+                    maxTargetVal = testTargets[i].at(k, 0);
+                    realClass = k;
+                }
+            }
+
+            if (prediction == realClass) {
+                correct++;
+            }
         }
 
+    } else if (parity) {
+        string auxString = "";
+        if (stoi(argv[2]) == 2) auxString = "(XOR) ";
 
-        //ESTE CODIGO ES PARA EL PROBLEMA DE PARIDAD (SALIDA UNICA)
-        // Matrix output = nn.feedforward(testInputs[i], "tanh");
-        // double predictedVal = output.at(0, 0);
-        // double targetVal = testTargets[i].at(0, 0);
+        cout << "========= PRUEBA DE APRENDIZAJE - PARIDAD DE " << argv[2] << " BITS " << auxString << "=========" << endl;
+        ParityProblem problem(stoi(argv[2]), stoi(argv[3]));
 
-        // // Acierto si tienen el mismo signo
-        // // (Ambos positivos O Ambos negativos)
-        // if ((predictedVal > 0 && targetVal > 0) || (predictedVal < 0 && targetVal < 0)) {
-        //     correct++;
-        // }
+            
+        // 2. CREAR Y ENTRENAR LA RED EN BASE A LOS DATOS GENERADOS DEl PROBLEMA SELECCIONADO
+        NeuralNetwork nn = problem.createAndTrainNetwork(100, 0.01, "tanh");
+
+        // 3. VERIFICAR RESULTADOS EN DATOS DE TEST
+        const vector<Matrix>& testInputs = problem.getTestInputs();
+        const vector<Matrix>& testTargets = problem.getTestTargets();
+        correct = 0;
+        inputSize = testInputs.size();
+
+        for(size_t i = 0; i < testInputs.size(); ++i) {
+
+            //ESTE CODIGO ES PARA EL PROBLEMA DE PARIDAD (SALIDA UNICA)
+            Matrix output = nn.feedforward(testInputs[i], "tanh");
+            double predictedVal = output.at(0, 0);
+            double targetVal = testTargets[i].at(0, 0);
+
+            // Acierto si tienen el mismo signo
+            // (Ambos positivos O Ambos negativos)
+            if ((predictedVal > 0 && targetVal > 0) || (predictedVal < 0 && targetVal < 0)) {
+                correct++;
+            }
+        }
+    }else {
+        cout << "Problema no reconocido." << endl;
+        return -1;
     }
 
-    double accuracy = (double)correct / testInputs.size() * 100.0;
+    double accuracy = (double)correct / inputSize * 100.0;
     cout << "\nPrecision total en datos de test: " << accuracy << "%" << endl;
 
-    HoeffdingInequality(testInputs.size(), 1 - (accuracy / 100.0), 0.05);
+    HoeffdingInequality(inputSize, 1 - (accuracy / 100.0), 0.05);
 
     return 0;
 }
