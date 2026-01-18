@@ -310,6 +310,7 @@ class NeuralNetwork {
         //------------------------------------------------------------------------------------ 
         //------------------------------------------------------------------------------------
     
+        
         //we only implement softmax for the output layer (1 column matrix)
         static Matrix softmax(const Matrix& z){
            //softmax formula -> exp(z_i) / sum(exp(z_j)) for j = 1 to n
@@ -411,6 +412,17 @@ class NeuralNetwork {
             return sum / 2.0;
         }
 
+        
+        // Helper para calcular el error promedio de un set de datos sin entrenar
+        double calculateLoss(const vector<Matrix>& inputs, const vector<Matrix>& targets, string activation_func) {
+            double total_loss = 0.0;
+            for (size_t i = 0; i < inputs.size(); ++i) {
+                Matrix output = feedforward(inputs[i], activation_func);
+                total_loss += costFunction(output, targets[i]);
+            }
+            return total_loss / inputs.size();
+        }
+
         //backpropagation function needs to be implemented
 
         void backpropagate(const Matrix& target, double learning_rate, string activation_func = "tanh") {
@@ -468,12 +480,18 @@ class NeuralNetwork {
             }
         }
         
-        void train(const vector<Matrix>& inputs, const vector<Matrix>& targets, int epochs, double learning_rate, string activation_func = "tanh", bool verbose = true) {
+        void train(const vector<Matrix>& inputs, const vector<Matrix>& targets, const vector<Matrix>& valInputs, const vector<Matrix>& valTargets, int epochs, double learning_rate, string activation_func = "tanh", int patience = 10, bool verbose = true) {
             // Basic validation
             if (inputs.size() != targets.size()) {
                 cerr << "Error: Number of inputs and targets do not match." << endl;
                 return;
             }
+
+            //early stopping variables
+            double bestValLoss = 1e9; // Infinito
+            int patienceCounter = 0;
+            vector<Matrix> bestWeights = weights;
+            vector<Matrix> bestBiases = biases;
 
             for (int epoch = 1; epoch <= epochs; ++epoch) {
                 double total_loss = 0.0;
@@ -481,15 +499,38 @@ class NeuralNetwork {
                 for (size_t i = 0; i < inputs.size(); ++i) {
 
                     Matrix output = feedforward(inputs[i], activation_func);
-                    
                     total_loss += costFunction(output, targets[i]);
-
                     backpropagate(targets[i], learning_rate, activation_func);
                 }
 
+                //Early Stopping
+                if (!valInputs.empty()) {
+                    // Calculamos error en validación (datos que la red NO ha visto)
+                    double currentValLoss = calculateLoss(valInputs, valTargets, activation_func);
+
+                    // Logica de Paciencia
+                    if (currentValLoss < bestValLoss) {
+                        bestValLoss = currentValLoss;
+                        patienceCounter = 0;
+                        // Guardamos copia de seguridad del mejor modelo
+                        bestWeights = weights;
+                        bestBiases = biases;
+                    } else {
+                        patienceCounter++;
+                    }
+
+                    // Si se agota la paciencia, restauramos y salimos
+                    if (patienceCounter >= patience) {
+                        if (verbose) cout << ">>> Early Stopping activado en epoca " << epoch 
+                                          << ". Restaurando mejor modelo (Val Loss: " << bestValLoss << ")" << endl;
+                        weights = bestWeights;
+                        biases = bestBiases;
+                        break;
+                    }
+                }
+
                 if (verbose &&(epoch % 10 == 0 || epoch == 1 || epoch == epochs)) {
-                     cout << "Epoch: " << epoch  << "/" << epochs 
-                          << " | Avg Error (Loss): " << total_loss / inputs.size() << endl;
+                     cout << "Epoch: " << epoch  << "/" << epochs << " | Avg Error (Loss): " << total_loss / inputs.size() << " | patience left (early stopping): " << (patience - patienceCounter) << endl;
                 }
             }
             cout << "Training completed." << endl;

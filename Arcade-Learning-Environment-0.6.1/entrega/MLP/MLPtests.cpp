@@ -11,6 +11,8 @@ class DonutProblem {
         vector<Matrix> TrainTargets;
         vector<Matrix> TestInputs;
         vector<Matrix> TestTargets;
+        vector<Matrix> valInputs;
+        vector<Matrix> valTargets;
 
     public:
         DonutProblem(int samples) {
@@ -46,6 +48,32 @@ class DonutProblem {
                 TrainTargets.push_back(target);
             }
 
+            //generate validation data (20% of training samples)
+
+            for (int i = 0; i < samples / 5; ++i) {
+                double x = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
+                double y = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
+                double r = sqrt(x*x + y*y);
+
+                Matrix input(2, 1);
+                input.at(0, 0) = x;
+                input.at(1, 0) = y;
+                valInputs.push_back(input);
+
+                Matrix target(2, 1); 
+                
+                if (r >= innerRadius && r <= outerRadius) {
+                    target.at(0, 0) = -1.0; 
+                    target.at(1, 0) = 1.0; 
+                } 
+                else {
+                    target.at(0, 0) = 1.0;
+                    target.at(1, 0) = -1.0;
+                }
+
+                valTargets.push_back(target);
+            }
+
             // --- GENERAR DATOS DE TEST ---
             for (int i = 0; i < samples; ++i) {
                 double x = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
@@ -76,12 +104,14 @@ class DonutProblem {
             vector<unsigned int> topology = {2, 24, 12, 6, 2}; 
             NeuralNetwork nn(topology);
             cout << "Entrenando la red para el problema del donut..." << endl;
-            nn.train(TrainInputs, TrainTargets, epochs, learning_rate, activation_func, true);
+            nn.train(TrainInputs, TrainTargets,valInputs, valTargets, epochs, learning_rate, activation_func, 10, true);
             return nn;
         }
 
         const vector<Matrix>& getTestInputs() const { return TestInputs; }
         const vector<Matrix>& getTestTargets() const { return TestTargets; }
+        const vector<Matrix>& getValInputs() const { return valInputs; }
+        const vector<Matrix>& getValTargets() const { return valTargets; }
 };
 
 class QuadrantProblem{
@@ -90,6 +120,8 @@ class QuadrantProblem{
         vector<Matrix> targets;
         vector<Matrix> testInputs;
         vector<Matrix> testTargets;
+        vector<Matrix> valInputs;
+        vector<Matrix> valTargets;
 
     public:
         QuadrantProblem(int samples) {
@@ -119,8 +151,33 @@ class QuadrantProblem{
                 targets.push_back(target_matrix);
             }
 
-            // Generar datos de prueba
+            //generate validation data (20% of training samples)
+            for (int i = 0; i < samples / 5; ++i) {
+                double x = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
+                double y = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
 
+                Matrix input_matrix(2, 1);
+                input_matrix.at(0, 0) = x;
+                input_matrix.at(1, 0) = y;
+
+                Matrix target_matrix(4, 1);
+                for(int k = 0; k < 4; ++k) {
+                    target_matrix.at(k, 0) = 0.0;
+                }
+
+                int val = 0;
+                if(x >= 0 && y >= 0) val = 0;        // Primer cuadrante
+                else if(x < 0 && y >= 0) val = 1;   // Segundo cuadrante
+                else if(x < 0 && y < 0) val = 2;    // Tercer cuadrante
+                else if(x >= 0 && y < 0) val = 3;   // Cuarto cuadrante
+
+                target_matrix.at(val, 0) = 1.0;
+
+                valInputs.push_back(input_matrix);
+                valTargets.push_back(target_matrix);
+            }
+
+            // Generar datos de prueba
             for(int i = 0; i < samples; i++){
                 double x = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
                 double y = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
@@ -151,12 +208,14 @@ class QuadrantProblem{
             vector<unsigned int> topology = {2, 10, 10, 4}; 
             NeuralNetwork nn(topology);
             cout << "Entrenando la red para el problema del cuadrante..." << endl;
-            nn.train(inputs, targets, epochs, learning_rate, activation_func, true);
+            nn.train(inputs, targets, valInputs, valTargets, epochs, learning_rate, activation_func, 10, true);
             return nn;
         }
 
         const vector<Matrix>& getTestInputs() const { return testInputs; }
         const vector<Matrix>& getTestTargets() const { return testTargets; }
+        const vector<Matrix>& getValInputs() const { return valInputs; }
+        const vector<Matrix>& getValTargets() const { return valTargets; }
 };
 
 class ParityProblem {
@@ -166,7 +225,10 @@ class ParityProblem {
         vector<Matrix> TrainTargets;
         vector<Matrix> TestInputs;
         vector<Matrix> TestTargets;
+        vector<Matrix> valInputs;
+        vector<Matrix> valTargets;
         int nBits; // Guardamos el número de bits para la topología
+        
 
     public:
         ParityProblem(int n, int samples) : nBits(n) {
@@ -198,6 +260,33 @@ class ParityProblem {
 
                 TrainTargets.push_back(target);
             }
+
+            // --- GENERAR DATOS DE VALIDACION ---
+            for (int i = 0; i < samples / 5; ++i){
+                Matrix input(nBits, 1);
+                int onesCount = 0;
+
+                for (int b = 0; b < nBits; ++b) {
+                    int bit = rand() % 2; 
+                    if (bit == 0) input.at(b, 0) = -1.0;
+                    else {
+                        input.at(b, 0) = 1.0;
+                        onesCount++;
+                    }
+                }
+                valInputs.push_back(input);
+
+                Matrix target(1, 1);
+                
+                if (onesCount % 2 != 0) {
+                    target.at(0, 0) = 1.0; 
+                } else {
+                    target.at(0, 0) = -1.0;
+                }
+
+                valTargets.push_back(target);
+            }
+
             // --- GENERAR DATOS DE TEST ---
             for (int i = 0; i < samples; ++i) {
                 
@@ -233,13 +322,15 @@ class ParityProblem {
             NeuralNetwork nn(topology);
             
             cout << "Entrenando la red para Paridad de " << nBits << " bits..." << endl;
-            nn.train(TrainInputs, TrainTargets, epochs, learning_rate, activation_func, true);
+            nn.train(TrainInputs, TrainTargets, valInputs, valTargets, epochs, learning_rate, activation_func, 10, true);
             
             return nn;
         }
 
         const vector<Matrix>& getTestInputs() const { return TestInputs; }
         const vector<Matrix>& getTestTargets() const { return TestTargets; }
+        const vector<Matrix>& getValInputs() const { return valInputs; }
+        const vector<Matrix>& getValTargets() const { return valTargets; }
 };
 
 int main(int argc, char* argv[]) {
