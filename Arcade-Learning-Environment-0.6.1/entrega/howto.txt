@@ -1,0 +1,112 @@
+# Compilación y ejecución (Manjaro / Linux)
+
+Este proyecto se compila con `g++` en Manjaro Linux usando C++17.
+
+## Requisitos
+
+- Manjaro Linux (o cualquier Linux)
+- `g++` (GCC) con soporte C++17
+- `make`
+
+## Estructura de archivos de NN
+
+### Archivos usados para la Neural Network (NN):
+
+MLPtests.cpp → Main de pruebas (contiene los problemas Donut, Quadrant y Parity).
+
+NeuralNetwork.h → Librería completa (Header-only) que incluye la clase Matrix, NeuralNetwork, Backpropagation y utilidades matemáticas.
+
+## Compilación NN
+g++ -O3 -std=c++17 -Wall MLPtests.cpp -o mlp_test
+
+## Ejecutar
+./mlp_test <problema> [parametros]
+
+### Ejemplos
+
+# 1. Problema del Donut (Clasificación no lineal 2D)
+# Uso: ./mlp_test donut <muestras>
+./mlp_test donut 2000
+
+# 2. Problema de Cuadrantes (Clasificación Multiclase)
+# Uso: ./mlp_test quadrant <muestras>
+./mlp_test quadrant 1000
+
+# 3. Problema de Paridad / XOR (Lógica n-bits)
+# Uso: ./mlp_test parity <bits> <muestras>
+./mlp_test parity 2 1000   # XOR simple (2 bits)
+./mlp_test parity 8 5000   # Paridad 8 bits
+./mlp_test parity 16 30000 # Paridad 16 bits (Alta carga)
+
+# Limpieza
+rm -f mlp_test
+
+
+## Estructura de archivos de GA
+
+### Archivos usados para el Algoritmo Genético (GA):
+
+main_ga.cpp → main de pruebas / CLI
+
+new_ga.cpp → implementación del motor GA + operadores
+
+problemas_ga.cpp → implementación de problemas (Sphere, Ackley, TSP, etc.)
+
+problemas_ga.h → cabecera de problemas
+
+
+## Compilación GA
+g++ -O3 -std=c++17 -Wall -Wextra -pedantic \
+  main_ga.cpp new_ga.cpp problemas_ga.cpp \
+  -o main_ga
+
+## Ejecutar
+./main_ga <problema> [opciones]
+
+### Ejemplos
+./main_ga xor --pop 40 --gen 80 --target 4
+./main_ga sphere --dim 20 --pop 80 --gen 300
+./main_ga rastrigin --dim 20 --pop 80 --gen 300
+
+
+# Limpieza
+rm -f main_ga
+
+
+=================================================================
+================   USANDO EL MAKEFILE APORTADO   ================
+=================================================================
+
+## 1. Compilación Automática
+
+Desde la terminal, situarse en la carpeta raíz del proyecto y ejecutar:
+
+# Compilar TODO (Genera ambos ejecutables: mlp_test y main_ga)
+make
+
+# Compilar SOLAMENTE la Red Neuronal
+make nn
+
+# Compilar SOLAMENTE el Algoritmo Genético
+make ga
+
+# Limpiar archivos (Borrar los ejecutables generados)
+make clean
+
+## 2. Ejecución de Tests Rápidos (Shortcuts)
+
+El Makefile incluye comandos preconfigurados para lanzar experimentos de demostración sin necesidad de escribir todos los parámetros manualmente:
+
+### Tests de Red Neuronal (NN)
+make run-donut       # Entrena y testea con el problema del Donut (2000 muestras)
+make run-quadrant    # Entrena y testea con el problema de Cuadrantes
+make run-parity      # Entrena y testea paridad de 8 bits
+
+### Tests de Algoritmo Genético (GA)
+make run-ga-sphere    # Ejecuta optimización de función Sphere (Dim 20)
+make run-ga-rastrigin # Ejecuta optimización de función Rastrigin
+make run-ga-xor       # Busca pesos para resolver XOR mediante GA
+
+## 3. Ayuda
+Para ver un resumen de todos los comandos disponibles en la consola:
+make help
