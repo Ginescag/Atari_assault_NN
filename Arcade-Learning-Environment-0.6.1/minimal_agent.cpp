@@ -141,7 +141,7 @@ int main(int argc, char **argv) {
    alei.setInt  ("random_seed", 0);
    alei.setFloat("repeat_action_probability", 0);
    alei.setBool ("display_screen", true);
-   alei.setBool ("sound", true);
+   alei.setBool ("sound", false);
    alei.loadROM (argv[1]);
   
 
