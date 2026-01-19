@@ -100,11 +100,11 @@ class DonutProblem {
             }
         }
         
-        NeuralNetwork createAndTrainNetwork(int epochs = 200, double learning_rate = 0.1, string activation_func = "tanh") {
+        NeuralNetwork createAndTrainNetwork(int epochs = 200, double learning_rate = 0.1,int patience = 15, string activation_func = "tanh") {
             vector<unsigned int> topology = {2, 24, 12, 6, 2}; 
             NeuralNetwork nn(topology);
             cout << "Entrenando la red para el problema del donut..." << endl;
-            nn.train(TrainInputs, TrainTargets,valInputs, valTargets, epochs, learning_rate, activation_func, 10, true);
+            nn.train(TrainInputs, TrainTargets,valInputs, valTargets, epochs, learning_rate, activation_func, patience, true);
             return nn;
         }
 
@@ -204,11 +204,11 @@ class QuadrantProblem{
             }
         }
 
-        NeuralNetwork createAndTrainNetwork(int epochs = 200, double learning_rate = 0.1, string activation_func = "tanh") {
+        NeuralNetwork createAndTrainNetwork(int epochs = 200, double learning_rate = 0.1, int patience = 15, string activation_func = "tanh") {
             vector<unsigned int> topology = {2, 10, 10, 4}; 
             NeuralNetwork nn(topology);
             cout << "Entrenando la red para el problema del cuadrante..." << endl;
-            nn.train(inputs, targets, valInputs, valTargets, epochs, learning_rate, activation_func, 10, true);
+            nn.train(inputs, targets, valInputs, valTargets, epochs, learning_rate, activation_func, patience, true);
             return nn;
         }
 
@@ -315,14 +315,14 @@ class ParityProblem {
             }
         }
 
-        NeuralNetwork createAndTrainNetwork(int epochs = 1000, double learning_rate = 0.01, string activation_func = "tanh") {
+        NeuralNetwork createAndTrainNetwork(int epochs = 1000, double learning_rate = 0.01, int patience = 15, string activation_func = "tanh") {
 
             vector<unsigned int> topology = {(unsigned int)nBits, 24, 24, 1}; 
             
             NeuralNetwork nn(topology);
             
             cout << "Entrenando la red para Paridad de " << nBits << " bits..." << endl;
-            nn.train(TrainInputs, TrainTargets, valInputs, valTargets, epochs, learning_rate, activation_func, 10, true);
+            nn.train(TrainInputs, TrainTargets, valInputs, valTargets, epochs, learning_rate, activation_func, patience, true);
             
             return nn;
         }
@@ -354,7 +354,7 @@ int main(int argc, char* argv[]) {
         DonutProblem problem(stoi(argv[2]));
         
         // 2. CREAR Y ENTRENAR LA RED EN BASE A LOS DATOS GENERADOS DEl PROBLEMA SELECCIONADO
-        NeuralNetwork nn = problem.createAndTrainNetwork(120, 0.01, "tanh");
+        NeuralNetwork nn = problem.createAndTrainNetwork(120, 0.01, 15, "tanh");
         
 
         // 3. VERIFICAR RESULTADOS EN DATOS DE TEST
@@ -390,7 +390,7 @@ int main(int argc, char* argv[]) {
 
         
         // 2. CREAR Y ENTRENAR LA RED EN BASE A LOS DATOS GENERADOS DEl PROBLEMA SELECCIONADO
-        NeuralNetwork nn = problem.createAndTrainNetwork(100, 0.01, "tanh");
+        NeuralNetwork nn = problem.createAndTrainNetwork(100, 0.01,15, "tanh");
 
         // 3. VERIFICAR RESULTADOS EN DATOS DE TEST
         const vector<Matrix>& testInputs = problem.getTestInputs();
@@ -428,7 +428,7 @@ int main(int argc, char* argv[]) {
 
             
         // 2. CREAR Y ENTRENAR LA RED EN BASE A LOS DATOS GENERADOS DEl PROBLEMA SELECCIONADO
-        NeuralNetwork nn = problem.createAndTrainNetwork(100, 0.01, "tanh");
+        NeuralNetwork nn = problem.createAndTrainNetwork(100, 0.01,15, "tanh");
 
         // 3. VERIFICAR RESULTADOS EN DATOS DE TEST
         const vector<Matrix>& testInputs = problem.getTestInputs();

@@ -7,7 +7,7 @@ CXX      = g++
 CXXFLAGS = -O3 -std=c++17
 
 # Carpetas (Ajusta si tus carpetas tienen otro nombre)
-DIR_NN   = NN
+DIR_NN   = MLP
 DIR_GA   = GA
 
 # Nombres de los ejecutables (se generan en la raíz)
