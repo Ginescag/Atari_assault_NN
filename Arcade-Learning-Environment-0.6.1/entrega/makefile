@@ -1,16 +1,13 @@
-# ==========================================
-# Makefile para Proyecto ML (Estructura Modular)
-# ==========================================
-
+# Makefile para Compilar Red Neuronal y Algoritmo Genético
 # Compilador y Flags
 CXX      = g++
 CXXFLAGS = -O3 -std=c++17
 
-# Carpetas (Ajusta si tus carpetas tienen otro nombre)
+# Carpetas
 DIR_NN   = MLP
 DIR_GA   = GA
 
-# Nombres de los ejecutables (se generan en la raíz)
+# Nombres de los ejecutables
 EXEC_NN  = mlp_test
 EXEC_GA  = main_ga
 
@@ -19,7 +16,7 @@ EXEC_GA  = main_ga
 # ==========================================
 
 all: $(EXEC_NN) $(EXEC_GA)
-	@echo ">> Compilación completa. Ejecutables generados en la raíz."
+	@echo ">> Compilacion completa. Ejecutables generados en la raiz."
 
 nn: $(EXEC_NN)
 ga: $(EXEC_GA)
@@ -35,7 +32,6 @@ $(EXEC_NN): $(DIR_NN)/MLPtests.cpp $(DIR_NN)/NeuralNetwork.h
 # Compilación Algoritmo Genético (GA)
 # ==========================================
 # Dependencias: Ficheros dentro de la carpeta GA
-# Se añade -I$(DIR_GA) para que encuentren sus propios .h si es necesario
 GA_SRC = $(DIR_GA)/main_ga.cpp $(DIR_GA)/new_ga.cpp $(DIR_GA)/problemas_ga.cpp
 
 $(EXEC_GA): $(GA_SRC) $(DIR_GA)/problemas_ga.h
