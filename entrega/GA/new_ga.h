@@ -225,7 +225,6 @@ public:
     Result run();
 
 private:
-    // Private helpers esto me lo ha hecho chatgptino
     void ensureReady() const;
 
     void evaluatePopulation(vector<Individual>& pop);

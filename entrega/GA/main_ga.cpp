@@ -365,7 +365,6 @@ static int runTests(GeneticAlgorithm::Config base_cfg, const ProblemOptions& po)
                 GeneticAlgorithm ga;
 
                 GeneticAlgorithm::Config cfg = base_cfg;
-                //cambio seed, esto se lo he preguntado al chatgpt, depende de problema combo y repeticion
                 uint32_t extra = (uint32_t)(pname.size() * 1000 + cidx * 100 + t * 7);
                 cfg.seed = base_cfg.seed + extra;
                 //si no hay targett definido pongo defaults
@@ -465,7 +464,6 @@ int main(int argc, char** argv) {
     string mx_name = "gauss";
     //empiezo a leer args
     /*
-    esto lo he hecho con chatgpt porque pasaba de resumir todo
     --pop N → cambia ga_cfg.population_size
 
     --gen N → cambia ga_cfg.stop.max_generations

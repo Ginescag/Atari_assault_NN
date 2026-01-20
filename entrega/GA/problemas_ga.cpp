@@ -17,7 +17,6 @@ static double clampValue(double x, double lo, double hi) {
     return x;
 }
 
-//nota: estos coments NO han sido generados por el chati, los he hecho yo a mano
 //os resumo lo que  es el problema de la esfera:
 /*
 1-
@@ -268,7 +267,6 @@ double AckleyProblem::evaluate(const Genome& genome) const {
         sum_cos += cos(c * x);//hago coseno de cx, ambos son sumatorios
     }
     /*
-    explicacion del chatgpt
     Si estás lejos del origen, sqrt(sum_sq/n) es grande → exp(-b * grande) se hace pequeño → el término se acerca a 0 (pero negativo).
     Si estás cerca de 0, sqrt(...) es pequeño → exp(-b*pequeño) se acerca a 1 → term1 se acerca a -a.
     O sea: este término empuja a que el mínimo esté cerca del origen*/

@@ -400,9 +400,6 @@ GeneticAlgorithm::Result GeneticAlgorithm::run(){
     return r;
 }
 
-
-// Private helpers esto me lo ha hecho chatgptino
-
 void GeneticAlgorithm::ensureReady() const{
     if (!problem_) {
         cerr << "GA error: problem not set" << endl;
