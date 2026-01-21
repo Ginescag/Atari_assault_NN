@@ -17,8 +17,6 @@
 # Debugger Files
 *.pdb
 
-# Compiled Dynamic libraries
-*.so
 *.dylib
 *.dll
 
@@ -40,27 +38,3 @@
 # debug information files
 *.dwo
 
-.venv/
-venv/
-
-# Build artifacts
-build/
-CMakeFiles/
-CMakeCache.txt
-cmake_install.cmake
-install_manifest.txt
-*.cmake
-*.o
-*.a
-*.so
-*.dll
-*.dylib
-*.exe
-
-# IDE
-.vscode/
-
-ale
-minimal_agent
-ale-*
-doc/examples/ale-*
