@@ -163,7 +163,7 @@ int main(int argc, char **argv) {
       NeuralNetwork nn(topology);
 
 
-      nn.train(trainInputs, trainTargets, valInputs, valTargets, 50, 0.02, "tanh", 20, true);
+      nn.train(trainInputs, trainTargets, valInputs, valTargets, 50, 0.01, "tanh", 20, true);
 
       cout << "MODEL TRAINED. STARTING AUTOMATIC PLAY" << endl;
 
