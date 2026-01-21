@@ -1,6 +1,9 @@
 import pandas as pd
 import numpy as np
 
+#ESTE SCRIPT DE PYTHON SIRVE PARA GENERAR UN DATASET BALANCEADO A PARTIR DE UNO QUE NO LO ESTA
+#AL HABER CIERTOS MOVIMIENTOS QUE SE REALIZAN MENOS QUE OTROS, REALIZO "DATA AUGMENTATION" GENERANDO COPIAS DE LAS ACCIONES QUE APARECEN MENOS CON UN RUIDO INTRODUCIDO
+
 # Configuración
 INPUT_FILE = 'dataset.txt'
 OUTPUT_FILE = 'dataset_balanced_1000.txt'
@@ -10,7 +13,8 @@ NOISE_INT_RANGE = 2  # El ruido variará aleatoriamente entre -2 y +2
 def generate_balanced_dataset():
     print(f"Leyendo {INPUT_FILE}...")
     try:
-        # Leemos el archivo. Engine python para mayor robustez con separadores
+        #GENERAMOS UN DATAFRAME DE PANDAS PARA PODER PARSEAR MEJOR LOS DATOS
+
         df = pd.read_csv(INPUT_FILE, sep='\s+', header=None, engine='python')
     except Exception as e:
         print(f"Error leyendo el archivo: {e}")
@@ -37,20 +41,18 @@ def generate_balanced_dataset():
             df_resampled = df_class.sample(n=SAMPLES_PER_CLASS, random_state=42)
             
         else:
-            # Si faltan datos (Clases 1, 2, 3), hacemos Oversampling
+            # Si faltan datos (Clases 1, 2, 3), hacemos data augmentation
             print(f"Clase {c}: {count} muestras -> Aumentando a {SAMPLES_PER_CLASS}")
             
             # 1. Copiamos los originales
             originals = df_class.copy()
             
-            # 2. Calculamos cuántos faltan
+            # 2. Calculamos cuántos faltan (aqui le añado algo mas para hacer que se intente disparar mas)
             n_needed = SAMPLES_PER_CLASS - count
             
             # 3. Muestreamos con reemplazo para generar los nuevos
             generated = df_class.sample(n=n_needed, replace=True, random_state=42)
             
-            # 4. Solo añadimos ruido a las clases 1 y 2 (según tus instrucciones)
-            # Y nos aseguramos de que sea entero y dentro de rango 0-255
             if c in [1, 2]:
                 print(f"   -> Añadiendo ruido entero (±{NOISE_INT_RANGE}) a clase {c}")
                 
