@@ -3,8 +3,8 @@ import numpy as np
 
 # Configuración
 INPUT_FILE = 'dataset.txt'
-OUTPUT_FILE = 'dataset_balanced_3000.txt'
-SAMPLES_PER_CLASS = 1500
+OUTPUT_FILE = 'dataset_balanced_1000.txt'
+SAMPLES_PER_CLASS = 1000
 NOISE_INT_RANGE = 2  # El ruido variará aleatoriamente entre -2 y +2
 
 def generate_balanced_dataset():
