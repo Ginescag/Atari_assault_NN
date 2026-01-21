@@ -5,7 +5,7 @@ CXXFLAGS = -O3
 # Librerías y flags de enlazado
 # Se incluye el rpath actual para encontrar libale.so y la librería SDL
 LDFLAGS = -Wl,-rpath=. -lSDL
-LIBS = libale.so
+LIBS = src/libale.so
 
 # Nombre del ejecutable de salida
 TARGET = hm
