@@ -8,7 +8,7 @@ import numpy as np
 INPUT_FILE = 'dataset.txt'
 OUTPUT_FILE = 'dataset_balanced_boosted_fire.txt'
 SAMPLES_PER_CLASS = 1000
-SAMPLES_CLASS_SHOOT = int(SAMPLES_PER_CLASS * 1.2)
+SAMPLES_CLASS_SHOOT = int(SAMPLES_PER_CLASS * 1.5)
 NOISE_INT_RANGE = 2      # El ruido variará aleatoriamente entre -2 y +2
 
 def generate_balanced_dataset():
@@ -36,7 +36,7 @@ def generate_balanced_dataset():
         count = len(df_class)
         
         # DEFINIMOS EL OBJETIVO DE MUESTRAS SEGÚN LA CLASE
-        target_count = SAMPLES_CLASS_SHOOT if c == 3 or c == 2 or c == 1 else SAMPLES_PER_CLASS
+        target_count = SAMPLES_CLASS_SHOOT if c == 3 else SAMPLES_PER_CLASS
 
         if count >= target_count:
             # Si sobran datos, hacemos downsampling al objetivo correspondiente
