@@ -1,20 +1,20 @@
 import pandas as pd
 import numpy as np
 
-#ESTE SCRIPT DE PYTHON SIRVE PARA GENERAR UN DATASET BALANCEADO A PARTIR DE UNO QUE NO LO ESTA
-#AL HABER CIERTOS MOVIMIENTOS QUE SE REALIZAN MENOS QUE OTROS, REALIZO "DATA AUGMENTATION" GENERANDO COPIAS DE LAS ACCIONES QUE APARECEN MENOS CON UN RUIDO INTRODUCIDO
+# ESTE SCRIPT DE PYTHON SIRVE PARA GENERAR UN DATASET BALANCEADO A PARTIR DE UNO QUE NO LO ESTA
+# MODIFICADO: AHORA LA CLASE 3 TIENE MAS MUESTRAS PARA INCENTIVAR EL DISPARO
 
 # Configuración
 INPUT_FILE = 'dataset.txt'
-OUTPUT_FILE = 'dataset_balanced_1000.txt'
+OUTPUT_FILE = 'dataset_balanced_boosted_fire.txt' # Nombre actualizado
 SAMPLES_PER_CLASS = 1000
-NOISE_INT_RANGE = 2  # El ruido variará aleatoriamente entre -2 y +2
+SAMPLES_CLASS_3 = int(SAMPLES_PER_CLASS * 1.5)
+NOISE_INT_RANGE = 2      # El ruido variará aleatoriamente entre -2 y +2
 
 def generate_balanced_dataset():
     print(f"Leyendo {INPUT_FILE}...")
     try:
-        #GENERAMOS UN DATAFRAME DE PANDAS PARA PODER PARSEAR MEJOR LOS DATOS
-
+        # GENERAMOS UN DATAFRAME DE PANDAS PARA PODER PARSEAR MEJOR LOS DATOS
         df = pd.read_csv(INPUT_FILE, sep='\s+', header=None, engine='python')
     except Exception as e:
         print(f"Error leyendo el archivo: {e}")
@@ -35,29 +35,32 @@ def generate_balanced_dataset():
         df_class = df[df[label_col] == c]
         count = len(df_class)
         
-        if count >= SAMPLES_PER_CLASS:
-            # Si sobran datos (Clases 0, 4, 5), hacemos downsampling
-            print(f"Clase {c}: {count} muestras -> Recortando a {SAMPLES_PER_CLASS}")
-            df_resampled = df_class.sample(n=SAMPLES_PER_CLASS, random_state=42)
+        # DEFINIMOS EL OBJETIVO DE MUESTRAS SEGÚN LA CLASE
+        target_count = SAMPLES_CLASS_3 if c == 3 else SAMPLES_PER_CLASS
+
+        if count >= target_count:
+            # Si sobran datos, hacemos downsampling al objetivo correspondiente
+            print(f"Clase {c}: {count} muestras -> Recortando a {target_count}")
+            df_resampled = df_class.sample(n=target_count, random_state=42)
             
         else:
-            # Si faltan datos (Clases 1, 2, 3), hacemos data augmentation
-            print(f"Clase {c}: {count} muestras -> Aumentando a {SAMPLES_PER_CLASS}")
+            # Si faltan datos, hacemos data augmentation
+            print(f"Clase {c}: {count} muestras -> Aumentando a {target_count}")
             
             # 1. Copiamos los originales
             originals = df_class.copy()
             
-            # 2. Calculamos cuántos faltan (aqui le añado algo mas para hacer que se intente disparar mas)
-            n_needed = SAMPLES_PER_CLASS - count
+            # 2. Calculamos cuántos faltan para llegar al objetivo específico
+            n_needed = target_count - count
             
             # 3. Muestreamos con reemplazo para generar los nuevos
             generated = df_class.sample(n=n_needed, replace=True, random_state=42)
             
-            if c in [1, 2]:
+            # AHORA APLICAMOS RUIDO TAMBIÉN A LA CLASE 3 PARA EVITAR DUPLICADOS EXACTOS
+            if c in [1, 2, 3]: 
                 print(f"   -> Añadiendo ruido entero (±{NOISE_INT_RANGE}) a clase {c}")
                 
                 # Generamos ruido entero entre -NOISE_INT_RANGE y +NOISE_INT_RANGE
-                # high es exclusivo en randint, por eso +1
                 noise = np.random.randint(
                     low=-NOISE_INT_RANGE, 
                     high=NOISE_INT_RANGE + 1, 
