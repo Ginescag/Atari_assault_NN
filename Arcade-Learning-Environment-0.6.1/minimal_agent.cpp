@@ -162,7 +162,7 @@ int main(int argc, char **argv) {
       
       NeuralNetwork nn(topology);
 
-      // Pasamos {}, {} como datos de validación vacíos
+
       nn.train(trainInputs, trainTargets, valInputs, valTargets, 50, 0.02, "tanh", 20, true);
 
       cout << "MODEL TRAINED. STARTING AUTOMATIC PLAY" << endl;
