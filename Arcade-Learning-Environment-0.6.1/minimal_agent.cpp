@@ -10,7 +10,7 @@
 #include "NeuralNetwork.h"
 using namespace std;
 // Constants
-constexpr uint32_t maxSteps = 7500;
+constexpr uint32_t maxSteps = 20000;
 
 
 string getPlayerAction(ALEInterface& alei){
@@ -157,7 +157,7 @@ int main(int argc, char **argv) {
       
       NeuralNetwork nn(topology);
 
-      nn.train(dataHelper.getInputs(), dataHelper.getTargets(),50, 0.02, "tanh");
+      nn.train(dataHelper.getInputs(), dataHelper.getTargets(),30, 0.02, "tanh");
 
       cout << "MODEL TRAINED. STARTING AUTOMATIC PLAY" << endl;
 
