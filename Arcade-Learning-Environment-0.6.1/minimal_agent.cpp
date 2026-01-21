@@ -133,17 +133,6 @@ int main(int argc, char **argv) {
    if (!trainMode && !datasetMode && !heatmapMode)
       usage(argv[0]);
 
-   reward_t totalReward{};
-   ALEInterface alei{};
-
-
-   // Configure alei object.
-   alei.setInt  ("random_seed", 0);
-   alei.setFloat("repeat_action_probability", 0);
-   alei.setBool ("display_screen", true);
-   alei.setBool ("sound", false);
-   alei.loadROM (argv[1]);
-  
 
    if(trainMode){
       //retrieves info from the data set, normalizes it (y label), trains the model on top of a MLP library (TO-DO)
@@ -153,13 +142,25 @@ int main(int argc, char **argv) {
 
       DataHelper dataHelper(ORGfile);
 
-      vector<unsigned int> topology = {128, 128, 64, (unsigned int)dataHelper.getOutputLayerSize()};
+      vector<unsigned int> topology = {128, 128, 64,32, (unsigned int)dataHelper.getOutputLayerSize()};
       
       NeuralNetwork nn(topology);
 
-      nn.train(dataHelper.getInputs(), dataHelper.getTargets(),30, 0.02, "tanh");
+      // Pasamos {}, {} como datos de validación vacíos
+      nn.train(dataHelper.getInputs(), dataHelper.getTargets(), {}, {}, 50, 0.02, "tanh", true);
 
       cout << "MODEL TRAINED. STARTING AUTOMATIC PLAY" << endl;
+
+      reward_t totalReward{};
+      ALEInterface alei{};
+
+
+      // Configure alei object.
+      alei.setInt  ("random_seed", 0);
+      alei.setFloat("repeat_action_probability", 0);
+      alei.setBool ("display_screen", true);
+      alei.setBool ("sound", false);
+      alei.loadROM (argv[1]);
 
       // Init
       std::srand(static_cast<uint32_t>(std::time(0)));
@@ -232,6 +233,18 @@ int main(int argc, char **argv) {
       return 0;
    }
   
+   reward_t totalReward{};
+   ALEInterface alei{};
+
+
+   // Configure alei object.
+   alei.setInt  ("random_seed", 0);
+   alei.setFloat("repeat_action_probability", 0);
+   alei.setBool ("display_screen", true);
+   alei.setBool ("sound", false);
+   alei.loadROM (argv[1]);
+   
+
    if(heatmapMode){
       string RAMfile = string(argv[3]);
       auto prevRAM = alei.getRAM();
