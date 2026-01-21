@@ -8,7 +8,7 @@ LDFLAGS = -Wl,-rpath=./src -lSDL
 LIBS = src/libale.so
 
 # Nombre del ejecutable de salida
-TARGET = hm
+TARGET = gines_caballero_guijarro.bot
 
 # Archivos fuente
 SRCS = src/minimal_agent.cpp
