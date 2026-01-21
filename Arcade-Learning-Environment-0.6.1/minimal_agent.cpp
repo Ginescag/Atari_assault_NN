@@ -142,12 +142,28 @@ int main(int argc, char **argv) {
 
       DataHelper dataHelper(ORGfile);
 
+      // 1. Obtener todos los datos
+      const vector<Matrix>& allInputs = dataHelper.getInputs();
+      const vector<Matrix>& allTargets = dataHelper.getTargets();
+
+      // 2. Dividir datos: 80% Entrenamiento, 20% Validación
+      size_t splitIndex = allInputs.size() * 0.8;
+
+      vector<Matrix> trainInputs(allInputs.begin(), allInputs.begin() + splitIndex);
+      vector<Matrix> trainTargets(allTargets.begin(), allTargets.begin() + splitIndex);
+
+      vector<Matrix> valInputs(allInputs.begin() + splitIndex, allInputs.end());
+      vector<Matrix> valTargets(allTargets.begin() + splitIndex, allTargets.end());
+
+      cout << "Datos totales: " << allInputs.size() << endl;
+      cout << "Training: " << trainInputs.size() << " | Validation: " << valInputs.size() << endl;
+
       vector<unsigned int> topology = {128, 128, 64,32, (unsigned int)dataHelper.getOutputLayerSize()};
       
       NeuralNetwork nn(topology);
 
       // Pasamos {}, {} como datos de validación vacíos
-      nn.train(dataHelper.getInputs(), dataHelper.getTargets(), {}, {}, 50, 0.02, "tanh", true);
+      nn.train(trainInputs, trainTargets, valInputs, valTargets, 50, 0.02, "tanh", 20, true);
 
       cout << "MODEL TRAINED. STARTING AUTOMATIC PLAY" << endl;
 

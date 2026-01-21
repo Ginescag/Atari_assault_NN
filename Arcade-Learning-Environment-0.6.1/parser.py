@@ -6,7 +6,7 @@ import numpy as np
 
 # Configuración
 INPUT_FILE = 'dataset.txt'
-OUTPUT_FILE = 'dataset_balanced_boosted_fire.txt' # Nombre actualizado
+OUTPUT_FILE = 'dataset_balanced_boosted_fire.txt'
 SAMPLES_PER_CLASS = 1000
 SAMPLES_CLASS_3 = int(SAMPLES_PER_CLASS * 1.5)
 NOISE_INT_RANGE = 2      # El ruido variará aleatoriamente entre -2 y +2
