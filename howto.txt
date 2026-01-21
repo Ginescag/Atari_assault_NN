@@ -1,0 +1,66 @@
+================================================================================
+GUÍA DE INSTALACIÓN Y EJECUCIÓN (HOWTO)
+================================================================================
+
+1. REQUERIMIENTOS DEL SISTEMA
+--------------------------------------------------------------------------------
+- Sistema Operativo: Linux (Probado en entorno CPCTelera / Ubuntu).
+- Compilador: g++ con soporte para C++17.
+- Herramienta de construcción: make.
+- Librerías del sistema:
+    * libsdl1.2-dev (SDL)
+    * libale.so (Debe estar presente en el directorio raíz del proyecto).
+- Python 3.x (Opcional, para scripts auxiliares).
+
+2. INSTRUCCIONES DE COMPILACIÓN
+--------------------------------------------------------------------------------
+El proyecto utiliza un Makefile para facilitar la compilación.
+
+A. Compilación estándar:
+   Ejecute el siguiente comando en la terminal para generar el ejecutable 'hm':
+   
+   make all
+
+B. Limpieza y Reconstrucción:
+
+   make clean
+   make all
+
+3. MODOS DE EJECUCIÓN
+--------------------------------------------------------------------------------
+El ejecutable generado se llama `hm`.
+Sintaxis General:
+./hm <romfile> <modo> <argumentos...>
+
+A. MODO DATASET (Recolección de datos manual)
+   Uso:
+   ./hm assault.bin dataset <DSTFile>
+
+B. MODO TRAIN (Entrenamiento + Juego Automático)
+   Uso:
+   ./hm assault.bin train dataset_balanced.txt modelo_final.model
+   
+   * Nota: Asegúrese de tener un dataset válido antes de entrenar.
+
+C. MODO HEATMAP (Análisis de RAM)
+   Uso:
+   ./hm assault.bin heatmap <DSTFile>
+
+4. UTILIDADES PYTHON (Opcional)
+--------------------------------------------------------------------------------
+Para balancear datasets o generar gráficas:
+instalar pandas, matplotlib y seaborn con pip (o crea un virtual Environment)
+python3 parser.py 
+python3 heatmap.py
+
+EN CASO DE QUE BUILD ESTE DAÑADO ANTES DE COMPILAR Y USAR HACER LO SIGUIENTE:
+    borrar build/
+    desde src (en un cmd):
+        -mkdir build
+        -cd build
+        -cmake .. -DUSE_SDL=ON -DBUILD_EXAMPLES=OFF
+        -make -j10
+        -cd ..
+        -make all
+
+        y ya estaria listo para ejecutar de nuevo
