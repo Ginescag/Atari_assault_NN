@@ -2,6 +2,7 @@
 GUÍA DE INSTALACIÓN Y EJECUCIÓN (HOWTO)
 ================================================================================
 
+
 1. REQUERIMIENTOS DEL SISTEMA
 --------------------------------------------------------------------------------
 - Sistema Operativo: Linux (Probado en entorno CPCTelera / Ubuntu).
@@ -28,23 +29,24 @@ B. Limpieza y Reconstrucción:
 
 3. MODOS DE EJECUCIÓN
 --------------------------------------------------------------------------------
+
 El ejecutable generado se llama `hm`.
 Sintaxis General:
 ./hm <romfile> <modo> <argumentos...>
 
 A. MODO DATASET (Recolección de datos manual)
    Uso:
-   ./hm assault.bin dataset <DSTFile>
+   ./hm src/supported/assault.bin dataset <DSTFile>
 
 B. MODO TRAIN (Entrenamiento + Juego Automático)
    Uso:
-   ./hm assault.bin train dataset_balanced.txt modelo_final.model
-   
+   ./hm src/supported/assault.bin train src/dataset_balanced_boosted_fire.txt <DSTfile>
+
    * Nota: Asegúrese de tener un dataset válido antes de entrenar.
 
 C. MODO HEATMAP (Análisis de RAM)
    Uso:
-   ./hm assault.bin heatmap <DSTFile>
+   ./hm src/supported/assault.bin heatmap <DSTFile>
 
 4. UTILIDADES PYTHON (Opcional)
 --------------------------------------------------------------------------------
